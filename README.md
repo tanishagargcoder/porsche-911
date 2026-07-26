@@ -20,6 +20,21 @@ bumper, headlamp, crest, wheel and tail, then pulls back out.
 - **Act 3 — wide.** The camera pulls back out and drifts while the car keeps
   turning, stats counting up beside it. Ends on **STILL HERE**.
 
+**Configurator**
+- **Paint** — five colours that morph rather than snap. The hero headline, the
+  finish section's copy, the loading screen, the sign-off and the browser tab
+  all rewrite themselves per colour.
+- **Wheels and calipers** — three wheel finishes, three caliper colours. The
+  caliper material (`suport`) was identified by geometry: it sits 23 cm off the
+  axle at the edge of the disc, where a hub carrier would be centred on it.
+- **Day / night showroom** — dims the rig and keeps the headlamps lit.
+- **Your build** — a summary card, and a link that carries the whole spec
+  (`?paint=…&wheels=…&calipers=…&night=1`).
+
+**Content**
+- **Technical data** — the full 996.1 Turbo spec sheet.
+- **Eight generations** — 901 through 992, with this one marked.
+
 **Toys**
 - **Paint switcher** — five colours, morphing rather than snapping. The hero
   headline and the HUD readout both follow the paint.
@@ -30,7 +45,10 @@ bumper, headlamp, crest, wheel and tail, then pulls back out.
 - **Sound** — a synthesised engine rev on the toggle, blow-off chatter whenever a
   macro shot locks on. Oscillators and filtered noise, no audio files.
 - **HUD** — corner brackets, scanlines, text that scrambles into place, live
-  progress, per-beat ticks.
+  progress, and per-beat ticks you can click to jump chapters.
+- **Play film** — a hands-free run of the whole sequence, cancelled by any real
+  scroll.
+- **Keyboard** — `1`–`5` paint, `P` photo mode, `S` sound.
 
 **Under it**
 - Camera work is a keyframed shot list in [`lib/shots.ts`](lib/shots.ts) — real

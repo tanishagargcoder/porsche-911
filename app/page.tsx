@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Lenis from "lenis";
 import { useProgress } from "@react-three/drei";
-import { Overlay, PaintPicker } from "@/components/Overlay";
+import { Overlay } from "@/components/Overlay";
+import { Configurator } from "@/components/Configurator";
 import { Loader } from "@/components/Loader";
 import { Intro } from "@/components/Intro";
 import { Gate } from "@/components/Gate";
@@ -18,6 +19,7 @@ import {
 } from "@/lib/config";
 import { clamp, intro, INTRO_MS, scroll } from "@/lib/scroll";
 import { rev, setEnabled, tick, unlock, whoosh } from "@/lib/audio";
+import { releaseScrollTween, tweenScrollTo } from "@/lib/tween";
 
 /** WebGL never runs on the server */
 const Scene = dynamic(() => import("@/components/Scene").then((m) => m.Scene), {
@@ -36,6 +38,7 @@ export default function Home() {
   const [photo, setPhoto] = useState(false);
   const [sound, setSound] = useState(false);
   const [night, setNight] = useState(false);
+  const [film, setFilm] = useState(false);
   const [wheelSlug, setWheelSlug] = useState(WHEELS[0].slug);
   const [caliperSlug, setCaliperSlug] = useState(CALIPERS[0].slug);
   const lenis = useRef<Lenis | null>(null);
@@ -205,6 +208,51 @@ export default function Home() {
     return () => window.removeEventListener("keydown", onKey);
   }, [phase]);
 
+  /** chapter ticks jump the timeline — each beat is one viewport tall */
+  const jump = useCallback((index: number) => {
+    tweenScrollTo(index * window.innerHeight, 1300, lenis.current);
+  }, []);
+
+  /** hands-free run of the whole film, cancelled by any real scroll */
+  const toggleFilm = useCallback(() => {
+    if (film) {
+      releaseScrollTween(lenis.current);
+      setFilm(false);
+      return;
+    }
+
+    setFilm(true);
+    const max = document.body.scrollHeight - window.innerHeight;
+    const left = 1 - window.scrollY / Math.max(max, 1);
+
+    tweenScrollTo(
+      max,
+      Math.max(8000, 72000 * left),
+      lenis.current,
+      () => setFilm(false),
+      (t) => t, // constant speed, like a camera move
+    );
+  }, [film]);
+
+  useEffect(() => {
+    if (!film) return;
+
+    const cancel = () => {
+      releaseScrollTween(lenis.current);
+      setFilm(false);
+    };
+
+    window.addEventListener("wheel", cancel, { passive: true });
+    window.addEventListener("touchstart", cancel, { passive: true });
+    window.addEventListener("keydown", cancel);
+
+    return () => {
+      window.removeEventListener("wheel", cancel);
+      window.removeEventListener("touchstart", cancel);
+      window.removeEventListener("keydown", cancel);
+    };
+  }, [film]);
+
   const enterWithSound = async () => {
     await unlock();
     setEnabled(true);
@@ -241,13 +289,25 @@ export default function Home() {
         >
           <Overlay paint={swatch} />
         </div>
-        <PaintPicker paint={paint} setPaint={setPaint} />
+        <Configurator
+          paint={swatch}
+          setPaint={setPaint}
+          wheel={wheel}
+          setWheel={setWheelSlug}
+          caliper={caliper}
+          setCaliper={setCaliperSlug}
+          night={night}
+          setNight={setNight}
+        />
         <Hud
           paint={paint}
           photo={photo}
           setPhoto={setPhoto}
           sound={sound}
           setSound={setSound}
+          onJump={jump}
+          film={film}
+          toggleFilm={toggleFilm}
         />
       </div>
 

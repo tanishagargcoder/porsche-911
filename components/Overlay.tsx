@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { SHOTS, PAINTS, type Paint, type Shot } from "@/lib/shots";
-import { tick } from "@/lib/audio";
+import { SHOTS, type Paint, type Shot } from "@/lib/shots";
 import { SPECS, GENERATIONS } from "@/lib/specs";
 import { CountUp, Scramble } from "./Scramble";
 
@@ -334,34 +333,3 @@ export function Overlay({ paint }: { paint: Paint }) {
   );
 }
 
-/** lives outside the scrolling copy so it stays reachable in photo mode */
-export function PaintPicker({
-  paint,
-  setPaint,
-}: {
-  paint: string;
-  setPaint: (hex: string) => void;
-}) {
-  return (
-    <div className="fixed bottom-7 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full border border-white/10 bg-black/50 px-4 py-3 backdrop-blur-md">
-      {PAINTS.map((p) => (
-        <button
-          key={p.hex}
-          onClick={() => {
-            setPaint(p.hex);
-            tick();
-          }}
-          title={p.name}
-          aria-label={p.name}
-          aria-pressed={paint === p.hex}
-          className={`h-5 w-5 rounded-full transition-transform duration-200 hover:scale-125 ${
-            paint === p.hex
-              ? "ring-2 ring-white/80 ring-offset-2 ring-offset-black"
-              : "ring-1 ring-white/20"
-          }`}
-          style={{ background: p.hex }}
-        />
-      ))}
-    </div>
-  );
-}

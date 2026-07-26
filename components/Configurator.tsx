@@ -1,0 +1,200 @@
+"use client";
+
+import { useState } from "react";
+import { PAINTS, type Paint } from "@/lib/shots";
+import { CALIPERS, WHEELS, type Caliper, type Wheel } from "@/lib/config";
+import { tick } from "@/lib/audio";
+
+function Row({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-6 py-3">
+      <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/35">
+        {label}
+      </span>
+      <div className="flex items-center gap-2.5">{children}</div>
+    </div>
+  );
+}
+
+function Dot({
+  hex,
+  active,
+  label,
+  onClick,
+}: {
+  hex: string;
+  active: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={() => {
+        onClick();
+        tick();
+      }}
+      title={label}
+      aria-label={label}
+      aria-pressed={active}
+      className={`h-5 w-5 rounded-full transition-transform duration-200 hover:scale-125 ${
+        active
+          ? "ring-2 ring-white/80 ring-offset-2 ring-offset-black"
+          : "ring-1 ring-white/20"
+      }`}
+      style={{ background: hex }}
+    />
+  );
+}
+
+/**
+ * The bottom bar: paint always reachable, everything else a click away, plus
+ * the build summary and a link that carries the whole spec.
+ */
+export function Configurator({
+  paint,
+  setPaint,
+  wheel,
+  setWheel,
+  caliper,
+  setCaliper,
+  night,
+  setNight,
+}: {
+  paint: Paint;
+  setPaint: (hex: string) => void;
+  wheel: Wheel;
+  setWheel: (slug: string) => void;
+  caliper: Caliper;
+  setCaliper: (slug: string) => void;
+  night: boolean;
+  setNight: (on: boolean) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // clipboard is blocked in some contexts; the URL bar already has the spec
+      setCopied(false);
+    }
+  };
+
+  return (
+    <div className="fixed bottom-7 left-1/2 z-30 w-[min(92vw,26rem)] -translate-x-1/2">
+      {/* the panel */}
+      <div
+        className={`mb-3 origin-bottom overflow-hidden rounded-2xl border border-white/10 bg-black/70 backdrop-blur-md transition-all duration-300 ${
+          open
+            ? "max-h-[28rem] opacity-100"
+            : "pointer-events-none max-h-0 border-transparent opacity-0"
+        }`}
+      >
+        <div className="divide-y divide-white/10 px-5 py-2">
+          <Row label="Wheels">
+            {WHEELS.map((w) => (
+              <Dot
+                key={w.slug}
+                hex={w.hex}
+                label={w.name}
+                active={w.slug === wheel.slug}
+                onClick={() => setWheel(w.slug)}
+              />
+            ))}
+          </Row>
+
+          <Row label="Calipers">
+            {CALIPERS.map((c) => (
+              <Dot
+                key={c.slug}
+                hex={c.hex}
+                label={c.name}
+                active={c.slug === caliper.slug}
+                onClick={() => setCaliper(c.slug)}
+              />
+            ))}
+          </Row>
+
+          <Row label="Showroom">
+            <button
+              onClick={() => {
+                setNight(!night);
+                tick();
+              }}
+              className="font-mono text-[10px] uppercase tracking-[0.25em] text-white/70 transition-colors hover:text-white"
+              aria-pressed={night}
+            >
+              {night ? "Night" : "Day"}
+            </button>
+          </Row>
+
+          {/* your build */}
+          <div className="py-4">
+            <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.3em] text-ruby">
+              Your build
+            </div>
+            <dl className="space-y-1.5 font-mono text-[10px] uppercase tracking-[0.15em]">
+              {[
+                ["Model", "911 Turbo · 996"],
+                ["Paint", `${paint.name} · ${paint.code}`],
+                ["Wheels", wheel.name],
+                ["Calipers", caliper.name],
+              ].map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-4">
+                  <dt className="text-white/30">{k}</dt>
+                  <dd className="text-right text-white/75">{v}</dd>
+                </div>
+              ))}
+            </dl>
+
+            <button
+              onClick={copyLink}
+              className="mt-4 w-full border border-white/20 py-2.5 font-mono text-[10px] uppercase tracking-[0.3em] text-white/60 transition-colors hover:border-ruby hover:text-white"
+            >
+              {copied ? "Link copied" : "Copy build link"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* the bar */}
+      <div className="flex items-center justify-between gap-3 rounded-full border border-white/10 bg-black/60 px-4 py-3 backdrop-blur-md">
+        <div className="flex items-center gap-3">
+          {PAINTS.map((p) => (
+            <Dot
+              key={p.hex}
+              hex={p.hex}
+              label={p.name}
+              active={p.hex === paint.hex}
+              onClick={() => setPaint(p.hex)}
+            />
+          ))}
+        </div>
+
+        <button
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-white/45 transition-colors hover:text-white"
+        >
+          Build
+          <span
+            className={`transition-transform duration-300 ${
+              open ? "rotate-180" : ""
+            }`}
+          >
+            ▴
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+}

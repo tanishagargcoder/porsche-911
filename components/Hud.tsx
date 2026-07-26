@@ -51,12 +51,18 @@ export function Hud({
   setPhoto,
   sound,
   setSound,
+  onJump,
+  film,
+  toggleFilm,
 }: {
   paint: string;
   photo: boolean;
   setPhoto: (on: boolean) => void;
   sound: boolean;
   setSound: (on: boolean) => void;
+  onJump: (index: number) => void;
+  film: boolean;
+  toggleFilm: () => void;
 }) {
   const [pct, setPct] = useState(0);
   const [active, setActive] = useState(0);
@@ -145,17 +151,27 @@ export function Hud({
         </div>
       </div>
 
-      {/* right edge — one tick per beat */}
-      <div className="pointer-events-none fixed right-8 top-1/2 z-20 hidden -translate-y-1/2 flex-col items-end gap-2 md:flex">
+      {/* right edge — one tick per beat, click to jump */}
+      <nav className="fixed right-6 top-1/2 z-30 hidden -translate-y-1/2 flex-col items-end gap-2 md:flex">
         {SHOTS.map((s, i) => (
-          <span
+          <button
             key={s.id}
-            className={`block h-px transition-all duration-300 ${
-              i === active ? "w-8 bg-ruby" : "w-3 bg-white/25"
-            }`}
-          />
+            onClick={() => onJump(i)}
+            aria-label={s.hud?.label ?? s.title ?? s.kind}
+            aria-current={i === active}
+            className="group flex items-center gap-2 py-1 pl-6"
+          >
+            <span className="whitespace-nowrap font-mono text-[9px] uppercase tracking-[0.25em] text-white/0 transition-colors duration-200 group-hover:text-white/60">
+              {s.hud?.label ?? s.title ?? "Rotation"}
+            </span>
+            <span
+              className={`block h-px transition-all duration-300 group-hover:w-8 group-hover:bg-white/70 ${
+                i === active ? "w-8 bg-ruby" : "w-3 bg-white/25"
+              }`}
+            />
+          </button>
         ))}
-      </div>
+      </nav>
 
       {/* bottom left — progress and the chevrons that keep pointing down */}
       <div className="pointer-events-none fixed bottom-8 left-8 z-20 flex items-end gap-4 font-mono text-[10px] uppercase tracking-[0.25em] text-white/45">
@@ -203,6 +219,21 @@ export function Hud({
 
       {/* bottom right — sound, and photo mode once you reach the end */}
       <div className="fixed bottom-8 right-8 z-30 flex flex-col items-end gap-3 font-mono text-[10px] uppercase tracking-[0.25em]">
+        <button
+          onClick={toggleFilm}
+          aria-pressed={film}
+          className={`pointer-events-auto flex items-center gap-2 transition-colors ${
+            film ? "text-white" : "text-white/45 hover:text-white"
+          }`}
+        >
+          <span
+            className={`h-1.5 w-1.5 ${
+              film ? "animate-pulse rounded-none bg-ruby" : "rounded-full bg-white/25"
+            }`}
+          />
+          {film ? "Stop film" : "Play film"}
+        </button>
+
         <button
           onClick={toggleSound}
           className="pointer-events-auto flex items-center gap-2 text-white/45 transition-colors hover:text-white"
