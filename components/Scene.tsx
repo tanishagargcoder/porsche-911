@@ -292,7 +292,8 @@ export function Scene({ paint, photo }: { paint: string; photo: boolean }) {
   return (
     <Canvas
       className="!fixed inset-0"
-      shadows
+      // PCFSoft is deprecated in three 0.185; PCF is the supported one now
+      shadows="percentage"
       dpr={[1, 2]}
       // preserveDrawingBuffer keeps the frame readable for photo-mode downloads
       gl={{

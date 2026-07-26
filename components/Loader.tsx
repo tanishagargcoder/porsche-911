@@ -3,7 +3,7 @@
 import { useProgress } from "@react-three/drei";
 import { useEffect, useState } from "react";
 
-export function Loader() {
+export function Loader({ name }: { name: string }) {
   const { progress, active } = useProgress();
   const [gone, setGone] = useState(false);
 
@@ -23,7 +23,7 @@ export function Loader() {
       }`}
     >
       <span className="font-display text-xs tracking-[0.5em] text-white/60">
-        RUBY STAR
+        {name.toUpperCase()}
       </span>
       <div className="mt-6 h-px w-48 overflow-hidden bg-white/10">
         <div

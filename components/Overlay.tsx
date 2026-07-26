@@ -106,6 +106,9 @@ function CopyBlock({
 
   const title = isHero ? paint.name : isFinish ? paint.title : shot.title;
   const body = isHero ? paint.tagline : isFinish ? paint.body : shot.body;
+  // the sign-off carries whichever colour is on the car
+  const kicker =
+    shot.kind === "run" ? `${paint.name} · 996 Turbo` : shot.kicker;
   const big = shot.kind === "title" || shot.kind === "final";
 
   return (
@@ -116,9 +119,9 @@ function CopyBlock({
       <div
         className={`flex w-full max-w-xl flex-col gap-4 transition-all duration-700 ease-out ${place} ${shown(on)}`}
       >
-        {shot.kicker && (
+        {kicker && (
           <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-ruby">
-            <Scramble text={shot.kicker} run={on} />
+            <Scramble text={kicker} run={on} />
           </span>
         )}
         {title && (

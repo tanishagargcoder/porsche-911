@@ -23,7 +23,12 @@ export function Scramble({
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (!run) return;
+    // off screen there's nothing to animate, but the text still has to keep up —
+    // paint changes rewrite copy in sections the reader hasn't reached yet
+    if (!run) {
+      setOut(text);
+      return;
+    }
 
     const reduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",

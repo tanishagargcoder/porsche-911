@@ -47,7 +47,17 @@ export default function Home() {
     const url = new URL(window.location.href);
     url.searchParams.set("paint", swatch.slug);
     window.history.replaceState(null, "", url);
-  }, [swatch.slug]);
+
+    // Next writes the static metadata title just after hydration, so the first
+    // one has to be re-asserted once that's done
+    const title = `911 Turbo — ${swatch.name}`;
+    document.title = title;
+    const again = setTimeout(() => {
+      document.title = title;
+    }, 300);
+
+    return () => clearTimeout(again);
+  }, [swatch.slug, swatch.name]);
 
   /** smooth scroll + the scroll→camera pipe */
   useEffect(() => {
@@ -215,7 +225,7 @@ export default function Home() {
       {phase === "gate" && (
         <Gate onEnter={enterWithSound} onSkip={enterMuted} />
       )}
-      <Loader />
+      <Loader name={swatch.name} />
     </main>
   );
 }

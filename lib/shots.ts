@@ -235,7 +235,8 @@ export const SHOTS: Shot[] = [
     // the car straightens up and leaves, same side-on framing as the intro
     id: "runaway",
     kind: "run",
-    kicker: "Ruby Star · 996 Turbo",
+    // kicker is filled in from the selected paint at render time
+    kicker: "",
     title: "See you at the lights",
     cam: [0, 1.15, 9],
     target: [0, 0.8, 0],
