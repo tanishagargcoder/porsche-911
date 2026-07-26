@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { SHOTS, PAINTS, type Shot } from "@/lib/shots";
+import { SHOTS, PAINTS, type Paint, type Shot } from "@/lib/shots";
 import { tick } from "@/lib/audio";
 import { CountUp, Scramble } from "./Scramble";
 
@@ -84,11 +84,11 @@ function DetailPanel({ shot }: { shot: Shot }) {
 function CopyBlock({
   shot,
   index,
-  paintName,
+  paint,
 }: {
   shot: Shot;
   index: number;
-  paintName: string;
+  paint: Paint;
 }) {
   const [ref, on] = useOnScreen(index === 0);
 
@@ -99,8 +99,13 @@ function CopyBlock({
         ? "items-end text-right ml-auto"
         : "items-start text-left";
 
-  // the hero headline is the paint name, so it changes with the swatches
-  const title = shot.kind === "title" ? paintName : shot.title;
+  // the copy follows the paint: the hero is the colour's name, and the finish
+  // section is written per colour
+  const isHero = shot.kind === "title";
+  const isFinish = shot.id === "paint";
+
+  const title = isHero ? paint.name : isFinish ? paint.title : shot.title;
+  const body = isHero ? paint.tagline : isFinish ? paint.body : shot.body;
   const big = shot.kind === "title" || shot.kind === "final";
 
   return (
@@ -125,9 +130,12 @@ function CopyBlock({
             {title}
           </h2>
         )}
-        {shot.body && (
-          <p className="max-w-md text-sm leading-relaxed text-white/55 md:text-base">
-            {shot.body}
+        {body && (
+          <p
+            key={body}
+            className="max-w-md text-sm leading-relaxed text-white/55 md:text-base"
+          >
+            {body}
           </p>
         )}
 
@@ -184,15 +192,7 @@ function TurnBlock({ shot, index }: { shot: Shot; index: number }) {
   );
 }
 
-export function Overlay({
-  paint,
-  setPaint,
-}: {
-  paint: string;
-  setPaint: (hex: string) => void;
-}) {
-  const paintName = (PAINTS.find((p) => p.hex === paint) ?? PAINTS[0]).name;
-
+export function Overlay({ paint }: { paint: Paint }) {
   return (
     <div className="relative z-10">
       {SHOTS.map((shot, i) =>
@@ -201,7 +201,7 @@ export function Overlay({
         ) : shot.kind === "turn" ? (
           <TurnBlock key={shot.id} shot={shot} index={i} />
         ) : (
-          <CopyBlock key={shot.id} shot={shot} index={i} paintName={paintName} />
+          <CopyBlock key={shot.id} shot={shot} index={i} paint={paint} />
         ),
       )}
 

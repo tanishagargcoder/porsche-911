@@ -140,6 +140,9 @@ export function Hud({
         <div>
           Paint code {swatch.code} · {swatch.hex.toUpperCase()}
         </div>
+        <div className="text-ruby/70">
+          <Scramble text={swatch.mood} />
+        </div>
       </div>
 
       {/* right edge — one tick per beat */}

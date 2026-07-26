@@ -245,11 +245,79 @@ export const SHOTS: Shot[] = [
   },
 ];
 
-/** Paint options — the body material is recoloured live and the wordmark follows. */
-export const PAINTS = [
-  { name: "Ruby Star", code: "M4A", hex: "#9e0b3d" },
-  { name: "Guards Red", code: "84A", hex: "#c8102e" },
-  { name: "GT Silver", code: "M7Z", hex: "#b4b8bb" },
-  { name: "Racing Yellow", code: "12G", hex: "#efd000" },
-  { name: "Midnight", code: "C9Z", hex: "#12151c" },
+export type Paint = {
+  slug: string;
+  name: string;
+  code: string;
+  hex: string;
+  /** one word in the HUD readout */
+  mood: string;
+  /** sits under the hero wordmark */
+  tagline: string;
+  /** the finish section rewrites itself per colour */
+  title: string;
+  body: string;
+};
+
+/**
+ * Paint options. The body material is recoloured live, and every piece of copy
+ * that talks about the colour changes with it — hero, finish section, HUD.
+ */
+export const PAINTS: Paint[] = [
+  {
+    slug: "ruby-star",
+    name: "Ruby Star",
+    code: "M4A",
+    hex: "#9e0b3d",
+    mood: "Loud",
+    tagline: "The one that refuses to behave",
+    title: "A colour with a temper",
+    body: "Rubystone Red — Rubinrot — the shade Porsche keeps bringing back because a car this familiar needs one thing that argues with it.",
+  },
+  {
+    slug: "guards-red",
+    name: "Guards Red",
+    code: "84A",
+    hex: "#c8102e",
+    mood: "Classic",
+    tagline: "The colour of every poster",
+    title: "Red, and nothing else",
+    body: "Indischrot. The default hero shade since the seventies — the one every kid drew on the back of a notebook, and the one every 911 is still measured against.",
+  },
+  {
+    slug: "gt-silver",
+    name: "GT Silver",
+    code: "M7Z",
+    hex: "#b4b8bb",
+    mood: "Quiet",
+    tagline: "Le Mans, in daylight",
+    title: "Silver runs deep",
+    body: "The Silver Arrows never really left. On a 911 it hides the creases and shows only the shape, which is precisely the point of it.",
+  },
+  {
+    slug: "racing-yellow",
+    name: "Racing Yellow",
+    code: "12G",
+    hex: "#efd000",
+    mood: "Awake",
+    tagline: "Impossible to ignore",
+    title: "Yellow means business",
+    body: "Speedgelb. Reserved for cars that spend their weekends on track and their weekdays being stared at across a car park.",
+  },
+  {
+    slug: "midnight",
+    name: "Midnight",
+    code: "C9Z",
+    hex: "#12151c",
+    mood: "Stealth",
+    tagline: "Seen late, heard first",
+    title: "Black keeps its secrets",
+    body: "Basalt after dark. The only finish that lets the intakes and the wing do all the talking, and only ever under a streetlight.",
+  },
 ];
+
+export const paintBySlug = (slug: string | null) =>
+  PAINTS.find((p) => p.slug === slug) ?? null;
+
+export const paintByHex = (hex: string) =>
+  PAINTS.find((p) => p.hex === hex) ?? PAINTS[0];

@@ -9,7 +9,7 @@ import { Loader } from "@/components/Loader";
 import { Intro } from "@/components/Intro";
 import { Gate } from "@/components/Gate";
 import { Hud } from "@/components/Hud";
-import { PAINTS } from "@/lib/shots";
+import { PAINTS, paintByHex, paintBySlug } from "@/lib/shots";
 import { clamp, intro, INTRO_MS, scroll } from "@/lib/scroll";
 import { rev, setEnabled, tick, unlock, whoosh } from "@/lib/audio";
 
@@ -32,6 +32,22 @@ export default function Home() {
   const lenis = useRef<Lenis | null>(null);
 
   const { active, progress } = useProgress();
+
+  const swatch = paintByHex(paint);
+
+  /** ?paint=racing-yellow opens straight into that colour, and links stay shareable */
+  useEffect(() => {
+    const wanted = paintBySlug(
+      new URLSearchParams(window.location.search).get("paint"),
+    );
+    if (wanted) setPaint(wanted.hex);
+  }, []);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("paint", swatch.slug);
+    window.history.replaceState(null, "", url);
+  }, [swatch.slug]);
 
   /** smooth scroll + the scroll→camera pipe */
   useEffect(() => {
@@ -182,7 +198,7 @@ export default function Home() {
             photo ? "pointer-events-none opacity-0" : "opacity-100"
           }`}
         >
-          <Overlay paint={paint} setPaint={setPaint} />
+          <Overlay paint={swatch} />
         </div>
         <PaintPicker paint={paint} setPaint={setPaint} />
         <Hud

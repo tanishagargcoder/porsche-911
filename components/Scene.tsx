@@ -169,7 +169,7 @@ function Rig({
 }
 
 /** studio rig built from area lights — reflections streak across the paint like a shoot */
-function Studio() {
+function Studio({ tint }: { tint: string }) {
   return (
     <Environment resolution={512}>
       <color attach="background" args={["#05060a"]} />
@@ -196,11 +196,11 @@ function Studio() {
         position={[9, 3.5, 0]}
         scale={[14, 3, 1]}
       />
-      {/* warm kick so the paint reads rich and not brown in the shadows */}
+      {/* kicker in the car's own colour, so the whole room shifts with the paint */}
       <Lightformer
         form="ring"
-        color="#ff5a7a"
-        intensity={2.4}
+        color={tint}
+        intensity={2.6}
         scale={4}
         position={[-6, 2, 6]}
       />
@@ -278,6 +278,17 @@ export function Scene({ paint, photo }: { paint: string; photo: boolean }) {
   const car = useRef<THREE.Group>(null);
   const focus = useMemo(() => new THREE.Vector3(0, 0.7, 0), []);
 
+  // the room picks up the paint, but lifted towards white so dark colours still
+  // throw a usable kick light
+  const tint = useMemo(
+    () =>
+      "#" +
+      new THREE.Color(paint)
+        .lerp(new THREE.Color("#ffffff"), 0.45)
+        .getHexString(),
+    [paint],
+  );
+
   return (
     <Canvas
       className="!fixed inset-0"
@@ -309,14 +320,14 @@ export function Scene({ paint, photo }: { paint: string; photo: boolean }) {
         angle={0.6}
         penumbra={1}
         intensity={60}
-        color="#ff4d73"
+        color={tint}
       />
 
       <Suspense fallback={null}>
         <group ref={car}>
           <Porsche paint={paint} />
         </group>
-        <Studio />
+        <Studio tint={tint} />
       </Suspense>
 
       <ContactShadows
