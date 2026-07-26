@@ -1,0 +1,189 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ruby: #d1155a;
+  --color-ink: #05060a;
+  --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html {
+  background: var(--color-ink);
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-ink);
+  color: #fff;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* lenis needs the document to grow naturally */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+::selection {
+  background: var(--color-ruby);
+  color: #fff;
+}
+
+/* vignette over the canvas so the copy always has something to sit on */
+.vignette {
+  background: radial-gradient(
+    120% 90% at 50% 45%,
+    transparent 35%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+}
+
+/* console texture: hairline scanlines over a faint grid */
+.scanlines {
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.025) 0px,
+      rgba(255, 255, 255, 0.025) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size:
+    100% 3px,
+    72px 72px,
+    72px 72px;
+  opacity: 0.6;
+}
+
+/* the chevrons that keep pointing down */
+.chev {
+  animation: chev 1.4s ease-in-out infinite;
+}
+
+@keyframes chev {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: translateY(-2px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(2px);
+  }
+}
+
+/* ---- intro: timings mirror INTRO_MS (3600ms) in lib/scroll.ts ---- */
+
+.intro-word {
+  animation: intro-word 3600ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes intro-word {
+  0% {
+    opacity: 0;
+    letter-spacing: 1.1em;
+    filter: blur(12px);
+  }
+  14% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  22% {
+    letter-spacing: 0.22em;
+  }
+  62% {
+    opacity: 1;
+    letter-spacing: 0.22em;
+  }
+  80% {
+    opacity: 0;
+    letter-spacing: 0.16em;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.intro-sub {
+  animation: intro-sub 3600ms ease-out forwards;
+}
+
+@keyframes intro-sub {
+  0%,
+  18% {
+    opacity: 0;
+  }
+  30%,
+  60% {
+    opacity: 1;
+  }
+  76%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* speed lines rip across only while the car is passing */
+.intro-speed span {
+  animation: intro-speed 700ms cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  opacity: 0;
+}
+
+.intro-speed {
+  animation: intro-speed-window 3600ms linear forwards;
+  opacity: 0;
+}
+
+@keyframes intro-speed-window {
+  0%,
+  20% {
+    opacity: 0;
+  }
+  26%,
+  60% {
+    opacity: 1;
+  }
+  70%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes intro-speed {
+  0% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+  20% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(240vw);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  .intro-word,
+  .intro-sub,
+  .intro-speed,
+  .intro-speed span,
+  .chev {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
