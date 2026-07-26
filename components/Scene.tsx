@@ -24,6 +24,7 @@ import { Porsche } from "./Porsche";
 import { SHOTS } from "@/lib/shots";
 import { clamp, easeInOut, intro, INTRO_MS, range, scroll } from "@/lib/scroll";
 import { rig } from "@/lib/rig";
+import { whoosh } from "@/lib/audio";
 
 const camPos = new THREE.Vector3();
 const camTarget = new THREE.Vector3();
@@ -66,6 +67,7 @@ function Rig({
   const { camera, size, pointer } = useThree();
   const settled = useRef(false);
   const drift = useRef(new THREE.Vector2());
+  const whooshed = useRef(false);
 
   useFrame((_, delta) => {
     if (rig.photo) return; // OrbitControls owns the camera in photo mode
@@ -85,10 +87,23 @@ function Rig({
     rig.detail = from.kind === "detail" || to.kind === "detail" ? 1 : 0;
     rig.lights = running ? 0 : clamp(p - IGNITE_AT);
 
+    // the closing run: the car straightens up and drives out of frame, which is
+    // the intro fly-past played once more on the way out
+    const leaving = to.kind === "run" ? t : 0;
+    const launch = Math.pow(leaving, 2.4) * 62;
+    rig.speed = leaving > 0.02 ? Math.min(305, Math.pow(leaving, 1.5) * 340) : 0;
+
+    if (leaving > 0.28 && !whooshed.current) {
+      whooshed.current = true;
+      whoosh(1.1);
+    } else if (leaving < 0.05) {
+      whooshed.current = false;
+    }
+
     if (car.current) {
       car.current.position.x = passing
         ? RUN_FROM + (RUN_TO - RUN_FROM) * pass
-        : 0;
+        : launch;
       // nose-first down the straight during the pass, timeline yaw after it
       car.current.rotation.y = passing ? 0 : from.yaw + (to.yaw - from.yaw) * t;
       car.current.visible = !running || intro.t > 0.2;
@@ -268,7 +283,12 @@ export function Scene({ paint, photo }: { paint: string; photo: boolean }) {
       className="!fixed inset-0"
       shadows
       dpr={[1, 2]}
-      gl={{ antialias: false, toneMappingExposure: 1.1 }}
+      // preserveDrawingBuffer keeps the frame readable for photo-mode downloads
+      gl={{
+        antialias: false,
+        toneMappingExposure: 1.1,
+        preserveDrawingBuffer: true,
+      }}
       camera={{ position: INTRO_CAM, fov: INTRO_FOV, near: 0.1, far: 120 }}
     >
       <color attach="background" args={["#05060a"]} />

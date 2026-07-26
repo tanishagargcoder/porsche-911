@@ -11,7 +11,7 @@ import { Gate } from "@/components/Gate";
 import { Hud } from "@/components/Hud";
 import { PAINTS } from "@/lib/shots";
 import { clamp, intro, INTRO_MS, scroll } from "@/lib/scroll";
-import { rev, setEnabled, unlock, whoosh } from "@/lib/audio";
+import { rev, setEnabled, tick, unlock, whoosh } from "@/lib/audio";
 
 /** WebGL never runs on the server */
 const Scene = dynamic(() => import("@/components/Scene").then((m) => m.Scene), {
@@ -123,6 +123,36 @@ export default function Home() {
     if (locked) lenis.current?.stop();
     else lenis.current?.start();
   }, [phase, photo]);
+
+  /** 1–5 for paint, P for photo mode, S for sound */
+  useEffect(() => {
+    if (phase !== "live") return;
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const n = Number(e.key);
+      if (n >= 1 && n <= PAINTS.length) {
+        setPaint(PAINTS[n - 1].hex);
+        tick();
+        return;
+      }
+
+      const key = e.key.toLowerCase();
+      if (key === "p") setPhoto((v) => !v);
+      if (key === "s") {
+        setSound((v) => {
+          const next = !v;
+          setEnabled(next);
+          if (next) rev();
+          return next;
+        });
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [phase]);
 
   const enterWithSound = async () => {
     await unlock();

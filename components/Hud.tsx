@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { SHOTS, PAINTS } from "@/lib/shots";
 import { clamp, scroll } from "@/lib/scroll";
+import { rig } from "@/lib/rig";
 import { flutter, setEnabled, rev } from "@/lib/audio";
 import { Scramble } from "./Scramble";
 
@@ -59,6 +60,7 @@ export function Hud({
 }) {
   const [pct, setPct] = useState(0);
   const [active, setActive] = useState(0);
+  const [speed, setSpeed] = useState(0);
   const frame = useRef(0);
   const lastBeat = useRef(0);
 
@@ -68,6 +70,11 @@ export function Hud({
 
       setPct((prev) => {
         const next = Math.round(p * 100);
+        return next === prev ? prev : next;
+      });
+
+      setSpeed((prev) => {
+        const next = Math.round(rig.speed);
         return next === prev ? prev : next;
       });
 
@@ -89,6 +96,16 @@ export function Hud({
 
   const swatch = PAINTS.find((p) => p.hex === paint) ?? PAINTS[0];
   const shot = SHOTS[active];
+
+  /** photo mode: pull the current frame straight off the canvas */
+  const saveShot = () => {
+    const canvas = document.querySelector("canvas");
+    if (!canvas) return;
+    const link = document.createElement("a");
+    link.download = `911-${swatch.name.toLowerCase().replace(/\s+/g, "-")}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  };
 
   const toggleSound = () => {
     const next = !sound;
@@ -167,6 +184,20 @@ export function Hud({
         </div>
       </div>
 
+      {/* speedo — only alive during the closing run */}
+      <div
+        className={`pointer-events-none fixed left-1/2 top-[38%] z-20 -translate-x-1/2 text-center transition-opacity duration-300 ${
+          speed > 2 ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        <div className="font-display text-7xl tabular-nums leading-none text-white md:text-8xl">
+          {speed}
+        </div>
+        <div className="mt-2 font-mono text-[10px] uppercase tracking-[0.5em] text-ruby">
+          km/h
+        </div>
+      </div>
+
       {/* bottom right — sound, and photo mode once you reach the end */}
       <div className="fixed bottom-8 right-8 z-30 flex flex-col items-end gap-3 font-mono text-[10px] uppercase tracking-[0.25em]">
         <button
@@ -181,6 +212,15 @@ export function Hud({
           />
           Sound {sound ? "on" : "off"}
         </button>
+
+        {photo && (
+          <button
+            onClick={saveShot}
+            className="pointer-events-auto border border-white/20 px-3 py-2 text-white/50 transition-colors hover:border-white/50 hover:text-white"
+          >
+            Save shot
+          </button>
+        )}
 
         <button
           onClick={() => setPhoto(!photo)}

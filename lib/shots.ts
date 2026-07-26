@@ -1,7 +1,7 @@
 export type Shot = {
   id: string;
   /** how the copy for this beat is laid out */
-  kind: "title" | "turn" | "detail" | "feature" | "final";
+  kind: "title" | "turn" | "detail" | "feature" | "final" | "run";
   kicker?: string;
   title?: string;
   body?: string;
@@ -229,6 +229,18 @@ export const SHOTS: Shot[] = [
     target: [0, 0.7, 0],
     fov: 40,
     yaw: -Math.PI * 2 - 2.1,
+    align: "center",
+  },
+  {
+    // the car straightens up and leaves, same side-on framing as the intro
+    id: "runaway",
+    kind: "run",
+    kicker: "Ruby Star · 996 Turbo",
+    title: "See you at the lights",
+    cam: [0, 1.15, 9],
+    target: [0, 0.8, 0],
+    fov: 26,
+    yaw: -Math.PI * 2,
     align: "center",
   },
 ];

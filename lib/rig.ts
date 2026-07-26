@@ -12,4 +12,6 @@ export const rig = {
   beat: 0,
   /** true while the user is dragging the car around in photo mode */
   photo: false,
+  /** km/h during the closing run — 0 whenever the car is parked */
+  speed: 0,
 };
