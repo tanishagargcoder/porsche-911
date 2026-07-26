@@ -1,7 +1,15 @@
 export type Shot = {
   id: string;
   /** how the copy for this beat is laid out */
-  kind: "title" | "turn" | "detail" | "feature" | "final" | "run";
+  kind:
+    | "title"
+    | "turn"
+    | "detail"
+    | "feature"
+    | "spec"
+    | "timeline"
+    | "final"
+    | "run";
   kicker?: string;
   title?: string;
   body?: string;
@@ -174,6 +182,25 @@ export const SHOTS: Shot[] = [
   },
 
   {
+    // in through the driver's window, looking across the dash
+    id: "cabin",
+    kind: "detail",
+    cam: [0.55, 1.12, 1.35],
+    target: [1.1, 0.92, -0.35],
+    fov: 40,
+    yaw: -Math.PI * 2,
+    hud: {
+      code: "06 / CABIN",
+      label: "Two seats that matter",
+      specs: [
+        ["Wheel", "3-spoke, airbag"],
+        ["Ignition", "left of the column"],
+        ["Rear seats", "a formality"],
+      ],
+      anchor: "left",
+    },
+  },
+  {
     id: "silhouette",
     kind: "feature",
     kicker: "Silhouette",
@@ -206,6 +233,29 @@ export const SHOTS: Shot[] = [
       { label: "0–100 km/h", value: 4.2, suffix: "s", decimals: 1 },
       { label: "Top speed", value: 305, suffix: "km/h" },
     ],
+  },
+  {
+    // car pushed to one side so the table has room
+    id: "spec",
+    kind: "spec",
+    kicker: "Technical data",
+    title: "The numbers",
+    cam: [-3.4, 1.5, 7.6],
+    target: [-1.6, 0.8, 0],
+    fov: 34,
+    yaw: -Math.PI * 2 - 1.2,
+    align: "right",
+  },
+  {
+    id: "timeline",
+    kind: "timeline",
+    kicker: "1963 — today",
+    title: "Eight generations",
+    cam: [4.8, 3.1, 6.4],
+    target: [0, 0.7, 0],
+    fov: 38,
+    yaw: -Math.PI * 2 - 1.45,
+    align: "center",
   },
   {
     id: "paint",

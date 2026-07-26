@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { SHOTS, PAINTS, type Paint, type Shot } from "@/lib/shots";
 import { tick } from "@/lib/audio";
+import { SPECS, GENERATIONS } from "@/lib/specs";
 import { CountUp, Scramble } from "./Scramble";
 
 /** true once the section is more than half on screen */
@@ -168,6 +169,99 @@ function CopyBlock({
   );
 }
 
+/** the proper spec sheet, the way a manufacturer site does it */
+function SpecBlock({ shot }: { shot: Shot }) {
+  const [ref, on] = useOnScreen();
+
+  return (
+    <section
+      ref={ref}
+      className="relative flex h-screen w-full items-center px-6 md:px-16"
+    >
+      <div
+        className={`ml-auto w-full max-w-lg transition-all duration-700 ease-out ${shown(on)}`}
+      >
+        <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-ruby">
+          <Scramble text={shot.kicker ?? ""} run={on} />
+        </span>
+        <h2 className="mt-3 font-display text-4xl uppercase leading-none tracking-tight text-white md:text-5xl">
+          {shot.title}
+        </h2>
+
+        <div className="mt-8 max-h-[52vh] space-y-6 overflow-y-auto pr-2">
+          {SPECS.map((group) => (
+            <div key={group.group}>
+              <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.3em] text-white/35">
+                {group.group}
+              </div>
+              <dl className="divide-y divide-white/10 border-y border-white/10">
+                {group.rows.map(([k, v]) => (
+                  <div key={k} className="flex justify-between gap-6 py-2">
+                    <dt className="text-xs text-white/45">{k}</dt>
+                    <dd className="text-right font-mono text-xs text-white/85">
+                      {v}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** eight generations, with this one marked */
+function TimelineBlock({ shot }: { shot: Shot }) {
+  const [ref, on] = useOnScreen();
+
+  return (
+    <section
+      ref={ref}
+      className="relative flex h-screen w-full flex-col justify-end px-6 pb-24 md:px-16"
+    >
+      <div
+        className={`transition-all duration-700 ease-out ${shown(on)}`}
+      >
+        <div className="text-center">
+          <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-ruby">
+            <Scramble text={shot.kicker ?? ""} run={on} />
+          </span>
+          <h2 className="mt-3 font-display text-4xl uppercase leading-none tracking-tight text-white md:text-5xl">
+            {shot.title}
+          </h2>
+        </div>
+
+        <div className="mt-10 flex gap-4 overflow-x-auto pb-4">
+          {GENERATIONS.map((g) => (
+            <div
+              key={g.code}
+              className={`min-w-[9.5rem] flex-1 border-t pt-3 transition-colors duration-500 ${
+                g.current ? "border-ruby" : "border-white/15"
+              }`}
+            >
+              <div
+                className={`font-display text-lg ${
+                  g.current ? "text-white" : "text-white/55"
+                }`}
+              >
+                {g.code}
+              </div>
+              <div className="mt-1 font-mono text-[10px] tracking-[0.25em] text-ruby/80">
+                {g.years}
+              </div>
+              <div className="mt-2 text-[11px] leading-snug text-white/35">
+                {g.note}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /** the rotation act runs almost bare — just a readout of the angle */
 function TurnBlock({ shot, index }: { shot: Shot; index: number }) {
   const [ref, on] = useOnScreen();
@@ -203,6 +297,10 @@ export function Overlay({ paint }: { paint: Paint }) {
           <DetailPanel key={shot.id} shot={shot} />
         ) : shot.kind === "turn" ? (
           <TurnBlock key={shot.id} shot={shot} index={i} />
+        ) : shot.kind === "spec" ? (
+          <SpecBlock key={shot.id} shot={shot} />
+        ) : shot.kind === "timeline" ? (
+          <TimelineBlock key={shot.id} shot={shot} />
         ) : (
           <CopyBlock key={shot.id} shot={shot} index={i} paint={paint} />
         ),

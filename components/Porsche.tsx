@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { rig } from "@/lib/rig";
+import type { Caliper, Wheel } from "@/lib/config";
 
 /** real 996 Turbo length, so camera distances elsewhere are honest metres */
 const CAR_LENGTH = 4.43;
@@ -15,6 +16,10 @@ const MODEL_YAW = Math.PI / 2;
 const HIDDEN = new Set(["floor", "Smoke", "sparks"]);
 /** the body panel material, the one that carries the paint */
 const BODY = "Porsche_911_Turbo__996__2000_by_Alex_Ka";
+/** wheel faces */
+const RIMS = new Set(["rim1", "rim2", "rim_bolts"]);
+/** the brake caliper — sits off-axle at the edge of the disc, unlike the hub */
+const CALIPER = "suport";
 
 /**
  * Box3.setFromObject counts hidden meshes, and this scene hides a ±8 unit ground
@@ -31,7 +36,17 @@ function bounds(root: THREE.Object3D) {
   return box;
 }
 
-export function Porsche({ paint }: { paint: string }) {
+export function Porsche({
+  paint,
+  wheel,
+  caliper,
+  night,
+}: {
+  paint: string;
+  wheel: Wheel;
+  caliper: Caliper;
+  night: boolean;
+}) {
   const { scene } = useGLTF("/models/porsche.glb");
   const group = useRef<THREE.Group>(null);
 
@@ -39,6 +54,8 @@ export function Porsche({ paint }: { paint: string }) {
   const model = useMemo(() => scene.clone(true), [scene]);
 
   const bodyMats = useRef<THREE.MeshPhysicalMaterial[]>([]);
+  const rimMats = useRef<THREE.MeshPhysicalMaterial[]>([]);
+  const caliperMats = useRef<THREE.MeshPhysicalMaterial[]>([]);
   const lamps = useRef<THREE.MeshPhysicalMaterial[]>([]);
   const tails = useRef<THREE.MeshPhysicalMaterial[]>([]);
   const beams = useRef<THREE.Group>(null);
@@ -46,8 +63,17 @@ export function Porsche({ paint }: { paint: string }) {
 
   const target = useMemo(() => new THREE.Color(paint), [paint]);
 
+  /**
+   * Applied from the frame loop rather than an effect: the materials are only
+   * collected once the model effect below has run, and effect order would leave
+   * the first paint of the wheels missed.
+   */
+  const applied = useRef({ wheel: "", caliper: "" });
+
   useEffect(() => {
     bodyMats.current = [];
+    rimMats.current = [];
+    caliperMats.current = [];
     lamps.current = [];
     tails.current = [];
 
@@ -91,6 +117,19 @@ export function Porsche({ paint }: { paint: string }) {
           tails.current.push(mat);
         }
 
+        if (RIMS.has(mat.name)) {
+          mat.map = null;
+          mat.envMapIntensity = 1.4;
+          rimMats.current.push(mat);
+        }
+
+        if (mat.name === CALIPER) {
+          mat.map = null;
+          mat.metalness = 0.35;
+          mat.roughness = 0.42;
+          caliperMats.current.push(mat);
+        }
+
         if (mat.name === "brakedisk") {
           mat.metalness = 1;
           mat.roughness = 0.35;
@@ -126,8 +165,26 @@ export function Porsche({ paint }: { paint: string }) {
     const k = 1 - Math.pow(0.002, delta);
     bodyMats.current.forEach((m) => m.color.lerp(target, k));
 
-    // headlamps ignite at the macro shot and stay lit
-    const lit = rig.lights;
+    if (applied.current.wheel !== wheel.slug && rimMats.current.length) {
+      applied.current.wheel = wheel.slug;
+      rimMats.current.forEach((m) => {
+        m.color.set(wheel.hex);
+        m.metalness = wheel.metalness;
+        m.roughness = wheel.roughness;
+        m.needsUpdate = true;
+      });
+    }
+
+    if (applied.current.caliper !== caliper.slug && caliperMats.current.length) {
+      applied.current.caliper = caliper.slug;
+      caliperMats.current.forEach((m) => {
+        m.color.set(caliper.hex);
+        m.needsUpdate = true;
+      });
+    }
+
+    // headlamps ignite at the macro shot, stay lit, and are always on at night
+    const lit = Math.max(rig.lights, night ? 1 : 0);
     lamps.current.forEach((m) => (m.emissiveIntensity = lit * 2.6));
     tails.current.forEach((m) => (m.emissiveIntensity = 0.15 + lit * 1.4));
 

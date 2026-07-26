@@ -10,6 +10,12 @@ import { Intro } from "@/components/Intro";
 import { Gate } from "@/components/Gate";
 import { Hud } from "@/components/Hud";
 import { PAINTS, paintByHex, paintBySlug } from "@/lib/shots";
+import {
+  CALIPERS,
+  WHEELS,
+  caliperBySlug,
+  wheelBySlug,
+} from "@/lib/config";
 import { clamp, intro, INTRO_MS, scroll } from "@/lib/scroll";
 import { rev, setEnabled, tick, unlock, whoosh } from "@/lib/audio";
 
@@ -29,23 +35,35 @@ export default function Home() {
   const [phase, setPhase] = useState<Phase>("loading");
   const [photo, setPhoto] = useState(false);
   const [sound, setSound] = useState(false);
+  const [night, setNight] = useState(false);
+  const [wheelSlug, setWheelSlug] = useState(WHEELS[0].slug);
+  const [caliperSlug, setCaliperSlug] = useState(CALIPERS[0].slug);
   const lenis = useRef<Lenis | null>(null);
 
   const { active, progress } = useProgress();
 
   const swatch = paintByHex(paint);
+  const wheel = wheelBySlug(wheelSlug);
+  const caliper = caliperBySlug(caliperSlug);
 
-  /** ?paint=racing-yellow opens straight into that colour, and links stay shareable */
+  /** the whole build lives in the URL, so a link opens someone else's spec */
   useEffect(() => {
-    const wanted = paintBySlug(
-      new URLSearchParams(window.location.search).get("paint"),
-    );
+    const q = new URLSearchParams(window.location.search);
+    const wanted = paintBySlug(q.get("paint"));
     if (wanted) setPaint(wanted.hex);
+    if (q.get("wheels")) setWheelSlug(wheelBySlug(q.get("wheels")).slug);
+    if (q.get("calipers"))
+      setCaliperSlug(caliperBySlug(q.get("calipers")).slug);
+    if (q.get("night") === "1") setNight(true);
   }, []);
 
   useEffect(() => {
     const url = new URL(window.location.href);
     url.searchParams.set("paint", swatch.slug);
+    url.searchParams.set("wheels", wheel.slug);
+    url.searchParams.set("calipers", caliper.slug);
+    if (night) url.searchParams.set("night", "1");
+    else url.searchParams.delete("night");
     window.history.replaceState(null, "", url);
 
     // Next writes the static metadata title just after hydration, so the first
@@ -57,7 +75,7 @@ export default function Home() {
     }, 300);
 
     return () => clearTimeout(again);
-  }, [swatch.slug, swatch.name]);
+  }, [swatch.slug, swatch.name, wheel.slug, caliper.slug, night]);
 
   /** smooth scroll + the scroll→camera pipe */
   useEffect(() => {
@@ -130,9 +148,16 @@ export default function Home() {
       }
     }, 450);
 
+    // whatever audio does, the page must never be left stuck on the loader with
+    // the copy hidden and scrolling locked
+    const failsafe = window.setTimeout(() => {
+      if (!cancelled) setPhase((p) => (p === "loading" ? "gate" : p));
+    }, 2000);
+
     return () => {
       cancelled = true;
       clearTimeout(t);
+      clearTimeout(failsafe);
     };
   }, [phase, active, progress, begin]);
 
@@ -195,7 +220,13 @@ export default function Home() {
 
   return (
     <main className="relative">
-      <Scene paint={paint} photo={photo} />
+      <Scene
+        paint={paint}
+        wheel={wheel}
+        caliper={caliper}
+        photo={photo}
+        night={night}
+      />
       <div className="vignette pointer-events-none fixed inset-0 z-[5]" />
 
       <div

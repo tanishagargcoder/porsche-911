@@ -25,6 +25,7 @@ import { SHOTS } from "@/lib/shots";
 import { clamp, easeInOut, intro, INTRO_MS, range, scroll } from "@/lib/scroll";
 import { rig } from "@/lib/rig";
 import { whoosh } from "@/lib/audio";
+import type { Caliper, Wheel } from "@/lib/config";
 
 const camPos = new THREE.Vector3();
 const camTarget = new THREE.Vector3();
@@ -169,12 +170,12 @@ function Rig({
 }
 
 /** studio rig built from area lights — reflections streak across the paint like a shoot */
-function Studio({ tint }: { tint: string }) {
+function Studio({ tint, night }: { tint: string; night: boolean }) {
   return (
     <Environment resolution={512}>
       <color attach="background" args={["#05060a"]} />
       <Lightformer
-        intensity={6}
+        intensity={night ? 1.4 : 6}
         rotation-x={Math.PI / 2}
         position={[0, 6, -3]}
         scale={[12, 6, 1]}
@@ -183,7 +184,7 @@ function Studio({ tint }: { tint: string }) {
         <Lightformer
           key={x}
           form="rect"
-          intensity={2.2}
+          intensity={night ? 0.6 : 2.2}
           rotation-y={Math.PI / 2}
           position={[-8, 3, x]}
           scale={[8, 1.2, 1]}
@@ -191,7 +192,7 @@ function Studio({ tint }: { tint: string }) {
       ))}
       <Lightformer
         form="rect"
-        intensity={3.2}
+        intensity={night ? 0.9 : 3.2}
         rotation-y={-Math.PI / 2}
         position={[9, 3.5, 0]}
         scale={[14, 3, 1]}
@@ -274,7 +275,19 @@ function Effects({ focus, full }: { focus: THREE.Vector3; full: boolean }) {
   );
 }
 
-export function Scene({ paint, photo }: { paint: string; photo: boolean }) {
+export function Scene({
+  paint,
+  wheel,
+  caliper,
+  photo,
+  night,
+}: {
+  paint: string;
+  wheel: Wheel;
+  caliper: Caliper;
+  photo: boolean;
+  night: boolean;
+}) {
   const car = useRef<THREE.Group>(null);
   const focus = useMemo(() => new THREE.Vector3(0, 0.7, 0), []);
 
@@ -306,12 +319,12 @@ export function Scene({ paint, photo }: { paint: string; photo: boolean }) {
       <color attach="background" args={["#05060a"]} />
       <fog attach="fog" args={["#05060a", 14, 40]} />
 
-      <hemisphereLight intensity={0.25} groundColor="#0a0a0f" />
+      <hemisphereLight intensity={night ? 0.06 : 0.25} groundColor="#0a0a0f" />
       <spotLight
         position={[5, 8, 4]}
         angle={0.5}
         penumbra={1}
-        intensity={120}
+        intensity={night ? 28 : 120}
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0005}
@@ -326,9 +339,14 @@ export function Scene({ paint, photo }: { paint: string; photo: boolean }) {
 
       <Suspense fallback={null}>
         <group ref={car}>
-          <Porsche paint={paint} />
+          <Porsche
+            paint={paint}
+            wheel={wheel}
+            caliper={caliper}
+            night={night}
+          />
         </group>
-        <Studio tint={tint} />
+        <Studio tint={tint} night={night} />
       </Suspense>
 
       <ContactShadows

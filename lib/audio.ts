@@ -50,12 +50,18 @@ function noise(c: AudioContext) {
 export async function unlock() {
   const c = context();
   if (!c) return false;
-  try {
-    await c.resume();
-  } catch {
-    return false;
-  }
-  return c.state === "running";
+  if (c.state === "running") return true;
+
+  // Chrome leaves this promise *pending* until a real gesture rather than
+  // rejecting, so it can never be awaited on its own — race it.
+  const resumed = c
+    .resume()
+    .then(() => c.state === "running")
+    .catch(() => false);
+
+  const gaveUp = new Promise<boolean>((r) => setTimeout(() => r(false), 350));
+
+  return Promise.race([resumed, gaveUp]);
 }
 
 export function setEnabled(on: boolean) {
