@@ -128,14 +128,20 @@ export function Hud({
       {/* scanlines + faint grid, the whole hacker-console texture */}
       <div className="scanlines pointer-events-none fixed inset-0 z-[6]" />
 
+      {/* the paint and build readouts change under the reader's feet, so
+          announce them once rather than on every scramble frame */}
+      <p aria-live="polite" className="sr-only">
+        {swatch.name}, paint code {swatch.code}
+      </p>
+
       {/* top left — who and what */}
-      <div className="pointer-events-none fixed left-8 top-7 z-20 font-mono text-[10px] uppercase leading-relaxed tracking-[0.25em] text-white/45">
+      <div className="pointer-events-none fixed left-5 top-6 z-20 font-mono text-[10px] uppercase leading-relaxed tracking-[0.25em] text-white/45 md:left-8 md:top-7">
         <div className="text-white/80">PORSCHE</div>
         <div>996.1 Turbo // 2000</div>
       </div>
 
       {/* top right — live paint readout, scrambles in on every change */}
-      <div className="pointer-events-none fixed right-8 top-7 z-20 text-right font-mono text-[10px] uppercase leading-relaxed tracking-[0.25em] text-white/45">
+      <div className="pointer-events-none fixed right-5 top-6 z-20 text-right font-mono text-[10px] uppercase leading-relaxed tracking-[0.25em] text-white/45 md:right-8 md:top-7">
         <div className="flex items-center justify-end gap-2">
           <span
             className="h-2 w-2 rounded-full transition-colors duration-500"
@@ -173,8 +179,9 @@ export function Hud({
         ))}
       </nav>
 
-      {/* bottom left — progress and the chevrons that keep pointing down */}
-      <div className="pointer-events-none fixed bottom-8 left-8 z-20 flex items-end gap-4 font-mono text-[10px] uppercase tracking-[0.25em] text-white/45">
+      {/* bottom left — progress and the chevrons that keep pointing down.
+          Sits above the configurator on phones so the two never collide. */}
+      <div className="pointer-events-none fixed bottom-32 left-5 z-20 flex items-end gap-4 font-mono text-[10px] uppercase tracking-[0.25em] text-white/45 md:bottom-8 md:left-8">
         <div>
           <div className="mb-2 text-white/80 tabular-nums">
             {String(pct).padStart(3, "0")}%
@@ -218,7 +225,7 @@ export function Hud({
       </div>
 
       {/* bottom right — sound, and photo mode once you reach the end */}
-      <div className="fixed bottom-8 right-8 z-30 flex flex-col items-end gap-3 font-mono text-[10px] uppercase tracking-[0.25em]">
+      <div className="fixed bottom-32 right-5 z-30 flex flex-col items-end gap-3 font-mono text-[10px] uppercase tracking-[0.25em] md:bottom-8 md:right-8">
         <button
           onClick={toggleFilm}
           aria-pressed={film}

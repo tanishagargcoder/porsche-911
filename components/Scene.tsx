@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
@@ -10,6 +10,7 @@ import {
   MeshReflectorMaterial,
   OrbitControls,
   AdaptiveDpr,
+  PerformanceMonitor,
 } from "@react-three/drei";
 import {
   Bloom,
@@ -291,6 +292,9 @@ export function Scene({
   const car = useRef<THREE.Group>(null);
   const focus = useMemo(() => new THREE.Vector3(0, 0.7, 0), []);
 
+  /** 2 = everything, 1 = no bokeh, 0 = no mirror either */
+  const [quality, setQuality] = useState(2);
+
   // the room picks up the paint, but lifted towards white so dark colours still
   // throw a usable kick light
   const tint = useMemo(
@@ -359,13 +363,38 @@ export function Scene({
         color="#000000"
       />
 
-      {/* wet showroom floor */}
-      <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <circleGeometry args={[22, 64]} />
+      <Floor reflective={quality > 0} night={night} />
+
+      <Rig car={car} focus={focus} />
+      <PhotoControls active={photo} />
+      <Quality focus={focus} level={quality} />
+
+      {/* if the frame rate sags, drop the expensive passes rather than stutter */}
+      <PerformanceMonitor
+        onDecline={() => setQuality((q) => Math.max(0, q - 1))}
+        flipflops={2}
+      />
+      <AdaptiveDpr pixelated />
+    </Canvas>
+  );
+}
+
+/** the floor loses its mirror first when the GPU is struggling */
+function Floor({
+  reflective,
+  night,
+}: {
+  reflective: boolean;
+  night: boolean;
+}) {
+  return (
+    <mesh rotation-x={-Math.PI / 2} receiveShadow>
+      <circleGeometry args={[22, 64]} />
+      {reflective ? (
         <MeshReflectorMaterial
           resolution={512}
           mixBlur={1}
-          mixStrength={22}
+          mixStrength={night ? 32 : 22}
           blur={[300, 90]}
           depthScale={1.1}
           minDepthThreshold={0.4}
@@ -375,13 +404,10 @@ export function Scene({
           metalness={0.65}
           roughness={0.82}
         />
-      </mesh>
-
-      <Rig car={car} focus={focus} />
-      <PhotoControls active={photo} />
-      <Quality focus={focus} />
-      <AdaptiveDpr pixelated />
-    </Canvas>
+      ) : (
+        <meshStandardMaterial color="#0a0b11" metalness={0.6} roughness={0.55} />
+      )}
+    </mesh>
   );
 }
 
@@ -411,8 +437,8 @@ function PhotoControls({ active }: { active: boolean }) {
   );
 }
 
-/** depth of field is the expensive one, so small screens skip it */
-function Quality({ focus }: { focus: THREE.Vector3 }) {
+/** depth of field is the expensive one, so small or struggling devices skip it */
+function Quality({ focus, level }: { focus: THREE.Vector3; level: number }) {
   const size = useThree((s) => s.size);
-  return <Effects focus={focus} full={size.width > 900} />;
+  return <Effects focus={focus} full={size.width > 900 && level >= 2} />;
 }

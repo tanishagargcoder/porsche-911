@@ -90,7 +90,10 @@ export function Configurator({
   };
 
   return (
-    <div className="fixed bottom-7 left-1/2 z-30 w-[min(92vw,26rem)] -translate-x-1/2">
+    <div
+      id="build"
+      className="fixed bottom-5 left-1/2 z-30 w-[min(92vw,26rem)] -translate-x-1/2 md:bottom-7"
+    >
       {/* the panel */}
       <div
         className={`mb-3 origin-bottom overflow-hidden rounded-2xl border border-white/10 bg-black/70 backdrop-blur-md transition-all duration-300 ${

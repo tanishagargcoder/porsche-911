@@ -268,6 +268,10 @@ export default function Home() {
 
   return (
     <main className="relative">
+      <a href="#build" className="skip-link">
+        Skip to the configurator
+      </a>
+
       <Scene
         paint={paint}
         wheel={wheel}
