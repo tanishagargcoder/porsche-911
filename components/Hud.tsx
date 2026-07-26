@@ -48,14 +48,17 @@ export function Hud({
   paint,
   photo,
   setPhoto,
+  sound,
+  setSound,
 }: {
   paint: string;
   photo: boolean;
   setPhoto: (on: boolean) => void;
+  sound: boolean;
+  setSound: (on: boolean) => void;
 }) {
   const [pct, setPct] = useState(0);
   const [active, setActive] = useState(0);
-  const [sound, setSound] = useState(false);
   const frame = useRef(0);
   const lastBeat = useRef(0);
 

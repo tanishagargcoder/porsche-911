@@ -43,6 +43,21 @@ function noise(c: AudioContext) {
   return src;
 }
 
+/**
+ * Try to open the audio device. Browsers only allow this off the back of a real
+ * gesture, so this returns false when it's blocked and the caller shows a gate.
+ */
+export async function unlock() {
+  const c = context();
+  if (!c) return false;
+  try {
+    await c.resume();
+  } catch {
+    return false;
+  }
+  return c.state === "running";
+}
+
 export function setEnabled(on: boolean) {
   enabled = on;
   if (on) context();
@@ -139,6 +154,67 @@ export function flutter() {
   src.stop(t + 0.45);
   lfo.start(t);
   lfo.stop(t + 0.45);
+}
+
+/**
+ * The fly-past. Noise and a low engine tone sweep from the left ear to the
+ * right while the pitch falls away — the doppler is what sells it.
+ */
+export function whoosh(duration = 1.5) {
+  const c = context();
+  if (!c || !enabled || !master) return;
+
+  const t = c.currentTime;
+  const end = t + duration;
+  const mid = t + duration * 0.5;
+
+  const pan = c.createStereoPanner();
+  pan.pan.setValueAtTime(-1, t);
+  pan.pan.linearRampToValueAtTime(1, end);
+  pan.connect(master);
+
+  const out = c.createGain();
+  out.gain.setValueAtTime(0.0001, t);
+  out.gain.exponentialRampToValueAtTime(0.85, mid);
+  out.gain.exponentialRampToValueAtTime(0.0001, end);
+  out.connect(pan);
+
+  // tyre and body roar
+  const air = noise(c);
+  const bp = c.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.setValueAtTime(2400, t);
+  bp.frequency.exponentialRampToValueAtTime(2900, mid);
+  bp.frequency.exponentialRampToValueAtTime(700, end);
+  bp.Q.value = 1.1;
+  const airGain = c.createGain();
+  airGain.gain.value = 0.35;
+  air.connect(bp).connect(airGain).connect(out);
+
+  // the engine note itself, dropping as it goes past
+  const lp = c.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.setValueAtTime(1800, t);
+  lp.frequency.exponentialRampToValueAtTime(500, end);
+  lp.connect(out);
+
+  const oscs = [1, 2, 3.01].map((mult, i) => {
+    const o = c.createOscillator();
+    o.type = i === 0 ? "sawtooth" : "square";
+    o.frequency.setValueAtTime(150 * mult, t);
+    o.frequency.exponentialRampToValueAtTime(165 * mult, mid);
+    o.frequency.exponentialRampToValueAtTime(78 * mult, end);
+    const g = c.createGain();
+    g.gain.value = 0.45 / (i + 1);
+    o.connect(g).connect(lp);
+    o.start(t);
+    o.stop(end + 0.05);
+    return o;
+  });
+  void oscs;
+
+  air.start(t);
+  air.stop(end + 0.05);
 }
 
 /** a dry click for the paint swatches */

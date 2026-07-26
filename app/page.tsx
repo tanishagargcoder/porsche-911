@@ -1,27 +1,34 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Lenis from "lenis";
 import { useProgress } from "@react-three/drei";
 import { Overlay, PaintPicker } from "@/components/Overlay";
 import { Loader } from "@/components/Loader";
 import { Intro } from "@/components/Intro";
+import { Gate } from "@/components/Gate";
 import { Hud } from "@/components/Hud";
 import { PAINTS } from "@/lib/shots";
 import { clamp, intro, INTRO_MS, scroll } from "@/lib/scroll";
+import { rev, setEnabled, unlock, whoosh } from "@/lib/audio";
 
 /** WebGL never runs on the server */
 const Scene = dynamic(() => import("@/components/Scene").then((m) => m.Scene), {
   ssr: false,
 });
 
-type Phase = "loading" | "intro" | "live";
+type Phase = "loading" | "gate" | "intro" | "live";
+
+/** the car is on screen from 22% to 66% of the intro — the whoosh rides that */
+const PASS_AT = INTRO_MS * 0.22;
+const PASS_FOR = (INTRO_MS * 0.44) / 1000;
 
 export default function Home() {
   const [paint, setPaint] = useState(PAINTS[0].hex);
   const [phase, setPhase] = useState<Phase>("loading");
   const [photo, setPhoto] = useState(false);
+  const [sound, setSound] = useState(false);
   const lenis = useRef<Lenis | null>(null);
 
   const { active, progress } = useProgress();
@@ -65,48 +72,70 @@ export default function Home() {
     };
   }, []);
 
-  /** loading → fly-past → live */
+  /** ignition, then the fly-past, with the whoosh timed to the car crossing */
+  const begin = useCallback((withSound: boolean) => {
+    intro.startedAt = performance.now();
+    setPhase("intro");
+
+    if (!withSound) return;
+    rev();
+    window.setTimeout(() => whoosh(PASS_FOR), PASS_AT);
+  }, []);
+
+  /**
+   * Once the car has loaded, try to open audio. Browsers usually refuse without
+   * a gesture, and then we ask for one rather than starting the show in silence.
+   */
   useEffect(() => {
     if (phase !== "loading" || active || progress < 100) return;
 
-    const start = setTimeout(() => {
-      intro.startedAt = performance.now();
-      setPhase("intro");
+    let cancelled = false;
+
+    const t = window.setTimeout(async () => {
+      const ok = await unlock();
+      if (cancelled) return;
+
+      if (ok) {
+        setEnabled(true);
+        setSound(true);
+        begin(true);
+      } else {
+        setPhase("gate");
+      }
     }, 450);
 
-    return () => clearTimeout(start);
-  }, [phase, active, progress]);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [phase, active, progress, begin]);
 
   useEffect(() => {
     if (phase !== "intro") return;
-
     const finish = setTimeout(() => setPhase("live"), INTRO_MS);
     return () => clearTimeout(finish);
   }, [phase]);
 
+  /** scroll stays locked until the show is over, and while photo mode is on */
   useEffect(() => {
-    if (phase !== "live") return;
-    document.body.style.overflow = "";
-    lenis.current?.start();
-  }, [phase]);
+    const locked = phase !== "live" || photo;
+    document.body.style.overflow = locked ? "hidden" : "";
+    if (locked) lenis.current?.stop();
+    else lenis.current?.start();
+  }, [phase, photo]);
 
-  /** no scrolling past the title card */
-  useEffect(() => {
-    if (phase === "live") return;
-    document.body.style.overflow = "hidden";
-  }, [phase]);
+  const enterWithSound = async () => {
+    await unlock();
+    setEnabled(true);
+    setSound(true);
+    begin(true);
+  };
 
-  /** photo mode hands the camera to the mouse, so the page stops scrolling */
-  useEffect(() => {
-    if (phase !== "live") return;
-    if (photo) {
-      lenis.current?.stop();
-      document.body.style.overflow = "hidden";
-    } else {
-      lenis.current?.start();
-      document.body.style.overflow = "";
-    }
-  }, [photo, phase]);
+  const enterMuted = () => {
+    setEnabled(false);
+    setSound(false);
+    begin(false);
+  };
 
   return (
     <main className="relative">
@@ -126,11 +155,20 @@ export default function Home() {
           <Overlay paint={paint} setPaint={setPaint} />
         </div>
         <PaintPicker paint={paint} setPaint={setPaint} />
-        <Hud paint={paint} photo={photo} setPhoto={setPhoto} />
+        <Hud
+          paint={paint}
+          photo={photo}
+          setPhoto={setPhoto}
+          sound={sound}
+          setSound={setSound}
+        />
       </div>
 
       {/* mounted exactly when the fly-past starts, so CSS and WebGL stay in step */}
       {phase === "intro" && <Intro />}
+      {phase === "gate" && (
+        <Gate onEnter={enterWithSound} onSkip={enterMuted} />
+      )}
       <Loader />
     </main>
   );
