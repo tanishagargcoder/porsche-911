@@ -525,6 +525,9 @@ export function Scene({
         color="#000000"
       />
 
+      <Halo tint={tint} night={night} />
+      <Dust tint={tint} />
+
       <Floor reflective={quality > 0} night={night} />
 
       <Rig />
@@ -659,6 +662,98 @@ function Capture() {
   }, [gl, scene, camera]);
 
   return null;
+}
+
+/**
+ * Dust hanging in the showroom air. Additive points, so they only ever brighten
+ * what's behind them — the light catches them near the car and they fall away
+ * into the dark at the edges.
+ */
+function Dust({ tint }: { tint: string }) {
+  const points = useRef<THREE.Points>(null);
+
+  const geometry = useMemo(() => {
+    const count = 2200;
+    const pos = new Float32Array(count * 3);
+    const size = new Float32Array(count);
+
+    for (let i = 0; i < count; i++) {
+      // a flattened shell around the car rather than a uniform box
+      const r = 3 + Math.random() * 11;
+      const th = Math.random() * Math.PI * 2;
+      pos[i * 3] = Math.cos(th) * r;
+      pos[i * 3 + 1] = Math.pow(Math.random(), 1.7) * 5.5 + 0.05;
+      pos[i * 3 + 2] = Math.sin(th) * r;
+      size[i] = 0.012 + Math.random() * 0.03;
+    }
+
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    g.setAttribute("size", new THREE.BufferAttribute(size, 1));
+    return g;
+  }, []);
+
+  useFrame((state, delta) => {
+    if (!points.current) return;
+    points.current.rotation.y += delta * 0.012;
+    points.current.position.y = Math.sin(state.clock.elapsedTime * 0.18) * 0.12;
+  });
+
+  return (
+    <points ref={points} geometry={geometry} frustumCulled={false}>
+      <pointsMaterial
+        size={0.035}
+        sizeAttenuation
+        color={tint}
+        transparent
+        opacity={0.55}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
+  );
+}
+
+/** a soft radial burst behind the car, in the car's own colour */
+function Halo({ tint, night }: { tint: string; night: boolean }) {
+  const texture = useMemo(() => {
+    const size = 256;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+
+    const ctx = canvas.getContext("2d")!;
+    const grad = ctx.createRadialGradient(
+      size / 2,
+      size / 2,
+      0,
+      size / 2,
+      size / 2,
+      size / 2,
+    );
+    grad.addColorStop(0, "rgba(255,255,255,0.85)");
+    grad.addColorStop(0.25, "rgba(255,255,255,0.28)");
+    grad.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+
+    const t = new THREE.CanvasTexture(canvas);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }, []);
+
+  return (
+    <sprite position={[-1.6, 1.5, -4.5]} scale={[18, 12, 1]}>
+      <spriteMaterial
+        map={texture}
+        color={tint}
+        transparent
+        opacity={night ? 0.5 : 0.28}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </sprite>
+  );
 }
 
 /** the floor loses its mirror first when the GPU is struggling */
