@@ -31,6 +31,15 @@ import { clamp, easeInOut, intro, INTRO_MS, range, scroll } from "@/lib/scroll";
 import { rig } from "@/lib/rig";
 import type { Caliper, Wheel } from "@/lib/config";
 
+/**
+ * The car group and the focus point live here rather than being passed as
+ * props. Three objects are circular (`parent` ⇄ `children`), and React dev
+ * tooling serialises props when it reports an error — which turns any real
+ * error into an unrelated "circular structure" crash and hides the cause.
+ */
+const carRef: { current: THREE.Group | null } = { current: null };
+const focusPoint = new THREE.Vector3(0, 0.7, 0);
+
 const camPos = new THREE.Vector3();
 const camTarget = new THREE.Vector3();
 const a = new THREE.Vector3();
@@ -74,13 +83,8 @@ function poseFromScroll() {
  * Drives everything that moves: the intro fly-past, the car's own yaw, the
  * camera walking down the shot list, and the pointer parallax on top.
  */
-function Rig({
-  car,
-  focus,
-}: {
-  car: React.RefObject<THREE.Group | null>;
-  focus: THREE.Vector3;
-}) {
+function Rig() {
+  const car = carRef;
   const { camera, size, pointer } = useThree();
   const settled = useRef(false);
   const drift = useRef(new THREE.Vector2());
@@ -192,7 +196,7 @@ function Rig({
     }
 
     camera.lookAt(camTarget);
-    focus.copy(camTarget); // depth of field focuses wherever the shot is aimed
+    focusPoint.copy(camTarget); // depth of field focuses wherever the shot is aimed
   });
 
   return null;
@@ -242,7 +246,7 @@ function Studio({ tint, night }: { tint: string; night: boolean }) {
  * Bloom on the lamps, bokeh that tightens right up for the macro shots, and a
  * little grain and fringing so it reads like footage rather than a render.
  */
-function Effects({ focus, full }: { focus: THREE.Vector3; full: boolean }) {
+function Effects({ full }: { full: boolean }) {
   const dof = useRef<React.ComponentRef<typeof DepthOfField>>(null);
   // these two forward the raw postprocessing effect, so type them as such
   const fringe = useRef<ChromaticAberrationEffect>(null);
@@ -252,8 +256,8 @@ function Effects({ focus, full }: { focus: THREE.Vector3; full: boolean }) {
   useEffect(() => {
     const e = dof.current;
     // the effect recomputes focus distance from this point every frame
-    if (e) e.target = focus;
-  }, [focus]);
+    if (e) e.target = focusPoint;
+  }, []);
 
   useFrame((_, delta) => {
     // scroll hard and the image starts to smear and glow — the whole point of
@@ -338,11 +342,9 @@ export function Scene({
   photo: boolean;
   night: boolean;
 }) {
-  const car = useRef<THREE.Group>(null);
-  const focus = useMemo(() => new THREE.Vector3(0, 0.7, 0), []);
-
   /** 2 = everything, 1 = no bokeh, 0 = no mirror either */
   const [quality, setQuality] = useState(2);
+  const [lost, setLost] = useState(false);
 
   // the room picks up the paint, but lifted towards white so dark colours still
   // throw a usable kick light
@@ -355,19 +357,43 @@ export function Scene({
     [paint],
   );
 
+  if (lost) {
+    return (
+      <div className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-ink px-6 text-center">
+        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/45">
+          The graphics context dropped out
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="border border-ruby px-6 py-3 font-mono text-[10px] uppercase tracking-[0.3em] text-white transition-colors hover:bg-ruby/15"
+        >
+          Restart
+        </button>
+      </div>
+    );
+  }
+
   return (
     <Canvas
       className="!fixed inset-0"
       // PCFSoft is deprecated in three 0.185; PCF is the supported one now
       shadows="percentage"
       dpr={[1, 2]}
-      // preserveDrawingBuffer keeps the frame readable for photo-mode downloads
       gl={{
         antialias: false,
         toneMappingExposure: 1.1,
+        // needed so photo mode can read the frame back off the canvas
         preserveDrawingBuffer: true,
+        powerPreference: "high-performance",
       }}
       camera={{ position: INTRO_CAM, fov: INTRO_FOV, near: 0.1, far: 120 }}
+      onCreated={({ gl }) => {
+        // a lost context otherwise surfaces as an unrelated React crash
+        gl.domElement.addEventListener("webglcontextlost", (e) => {
+          e.preventDefault();
+          setLost(true);
+        });
+      }}
     >
       <color attach="background" args={["#05060a"]} />
       <fog attach="fog" args={["#05060a", 14, 40]} />
@@ -391,7 +417,11 @@ export function Scene({
       />
 
       <Suspense fallback={null}>
-        <group ref={car}>
+        <group
+          ref={(g) => {
+            carRef.current = g;
+          }}
+        >
           <Porsche
             paint={paint}
             wheel={wheel}
@@ -414,9 +444,9 @@ export function Scene({
 
       <Floor reflective={quality > 0} night={night} />
 
-      <Rig car={car} focus={focus} />
+      <Rig />
       <PhotoControls active={photo} />
-      <Quality focus={focus} level={quality} />
+      <Quality level={quality} />
 
       {/* if the frame rate sags, drop the expensive passes rather than stutter */}
       <PerformanceMonitor
@@ -489,7 +519,7 @@ function PhotoControls({ active }: { active: boolean }) {
 }
 
 /** depth of field is the expensive one, so small or struggling devices skip it */
-function Quality({ focus, level }: { focus: THREE.Vector3; level: number }) {
+function Quality({ level }: { level: number }) {
   const size = useThree((s) => s.size);
-  return <Effects focus={focus} full={size.width > 900 && level >= 2} />;
+  return <Effects full={size.width > 900 && level >= 2} />;
 }
