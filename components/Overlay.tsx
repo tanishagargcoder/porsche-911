@@ -380,7 +380,7 @@ function TimelineBlock({ shot }: { shot: Shot }) {
   return (
     <section
       ref={ref}
-      className="relative flex h-screen w-full flex-col justify-end px-6 pb-24 md:px-16"
+      className="relative flex h-screen w-full flex-col justify-end px-6 pb-44 md:px-16 md:pb-24"
     >
       <div
         className={`transition-all duration-700 ease-out ${shown(on)}`}
@@ -431,7 +431,8 @@ function TurnBlock({ shot, index }: { shot: Shot; index: number }) {
   return (
     <section
       ref={ref}
-      className="relative flex h-screen w-full items-end justify-center pb-28"
+      // clears the configurator bar on phones, which sits lower than on desktop
+      className="relative flex h-screen w-full items-end justify-center pb-48 md:pb-28"
     >
       <div
         className={`flex flex-col items-center gap-2 transition-all duration-500 ${shown(on)}`}
