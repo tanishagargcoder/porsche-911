@@ -188,8 +188,11 @@ export function Porsche({
     lamps.current.forEach((m) => (m.emissiveIntensity = lit * 2.6));
     tails.current.forEach((m) => (m.emissiveIntensity = 0.15 + lit * 1.4));
 
+    // The beams stay mounted and visible for the whole session and are faded
+    // with opacity and intensity instead. Hiding a light removes it from the
+    // renderer's light setup, and putting it back rebuilds every shader program
+    // in the scene — one hard hitch, exactly at the headlamp shot.
     if (beams.current) {
-      beams.current.visible = lit > 0.01;
       beams.current.children.forEach((c) => {
         const mat = (c as THREE.Mesh).material as THREE.MeshBasicMaterial;
         if (mat) mat.opacity = lit * 0.06;
@@ -214,8 +217,9 @@ export function Porsche({
         }}
       />
 
-      {/* light cones out of the headlamps — bloom does the rest */}
-      <group ref={beams} visible={false}>
+      {/* light cones out of the headlamps — bloom does the rest. Mounted from
+          the first frame so their shaders compile with everything else */}
+      <group ref={beams}>
         {[0.48, -0.52].map((z) => (
           <mesh
             key={z}
