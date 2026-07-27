@@ -16,6 +16,17 @@ const group = (s: Shot) => {
 
 const GROUPS = ["All", "Walkaround", "Detail", "Reference", "Finish"] as const;
 
+/** small tags per card, the way a gallery labels what's in each item */
+const tags = (s: Shot): string[] => {
+  if (s.kind === "detail") return ["macro", "reticle"];
+  if (s.kind === "turn") return ["360°"];
+  if (s.kind === "spec") return ["data"];
+  if (s.kind === "timeline") return ["history"];
+  if (s.kind === "run") return ["motion"];
+  if (s.stats) return ["wide", "stats"];
+  return ["wide"];
+};
+
 /**
  * The whole timeline as a grid. Hovering a card flies the real camera to that
  * beat and thins the overlay so you watch it happen behind the grid — a live
@@ -34,6 +45,20 @@ export function Chapters({
 }) {
   const [filter, setFilter] = useState<(typeof GROUPS)[number]>("All");
   const [hovered, setHovered] = useState<number | null>(null);
+  const [thumbs, setThumbs] = useState<(string | null)[]>([]);
+
+  /** ask the scene for card renders the first time the index is opened */
+  useEffect(() => {
+    if (!open) return;
+    rig.wantThumbs = true;
+
+    const poll = setInterval(() => {
+      setThumbs([...rig.thumbs]);
+      if (rig.thumbsDone) clearInterval(poll);
+    }, 150);
+
+    return () => clearInterval(poll);
+  }, [open]);
 
   /** never leave the camera parked on a preview once the overlay is gone */
   useEffect(() => {
@@ -142,7 +167,7 @@ export function Chapters({
                   style={{
                     transitionDelay: open ? `${Math.min(i, 12) * 25}ms` : "0ms",
                   }}
-                  className={`group flex h-full w-full flex-col justify-between gap-8 p-5 text-left transition-all duration-300 ${
+                  className={`group flex h-full w-full flex-col gap-4 p-4 text-left transition-all duration-300 ${
                     open
                       ? "translate-y-0 opacity-100"
                       : "translate-y-3 opacity-0"
@@ -169,12 +194,45 @@ export function Chapters({
                     </span>
                   </div>
 
+                  {/* the real shot, rendered from the scene when the index opened */}
+                  <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[calc(var(--radius-card)-4px)] bg-black/40">
+                    {thumbs[i] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={thumbs[i]!}
+                        alt=""
+                        className={`h-full w-full object-cover transition-transform duration-500 ${
+                          hovered === i ? "scale-105" : "scale-100"
+                        }`}
+                      />
+                    ) : (
+                      // pulses while renders are queued, settles if they never come
+                      <div
+                        className={`h-full w-full bg-white/[0.04] ${
+                          rig.thumbsDone ? "" : "animate-pulse"
+                        }`}
+                      />
+                    )}
+                  </div>
+
                   <div>
                     <div className="font-display text-lg leading-tight text-white">
                       {label(shot)}
                     </div>
+
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {tags(shot).map((t) => (
+                        <span
+                          key={t}
+                          className="rounded-full border border-white/15 px-2 py-0.5 font-mono text-[8px] uppercase tracking-[0.2em] text-white/40"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+
                     <div
-                      className={`mt-2 h-px bg-ruby transition-all duration-300 ${
+                      className={`mt-3 h-px bg-ruby transition-all duration-300 ${
                         hovered === i ? "w-14" : "w-6"
                       }`}
                     />

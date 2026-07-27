@@ -39,26 +39,18 @@ export function Gate({
           <span className="h-px w-8 bg-ruby" />
         </div>
 
-        <h1 className="mt-7 font-display uppercase leading-[0.84] tracking-[-0.02em] text-white">
-          <span
-            className="gate-in block text-[21vw] md:text-[8rem]"
-            style={{ animationDelay: "160ms" }}
-          >
-            911
-          </span>
-          <span
-            className="gate-in block text-[21vw] md:text-[8rem]"
-            style={{ animationDelay: "240ms" }}
-          >
-            Turbo
-          </span>
+        <h1
+          className="gate-in mt-7 font-display text-[15vw] uppercase leading-[0.84] tracking-[0.06em] text-white md:text-[6.5rem]"
+          style={{ animationDelay: "160ms" }}
+        >
+          Porsche
         </h1>
 
         <span
           className="gate-in mt-4 font-mono text-[11px] uppercase tracking-[0.45em] text-white/50"
           style={{ animationDelay: "320ms" }}
         >
-          {paint.name}
+          911 Turbo · {paint.name}
         </span>
 
         {/* the numbers, hairline top and bottom */}
@@ -96,11 +88,10 @@ export function Gate({
           <span className="absolute inset-3 rounded-full border border-white/15 bg-black/50 backdrop-blur-sm transition-colors duration-300 group-hover:border-ruby group-hover:bg-ruby/15" />
           <span className="relative flex flex-col items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-ruby transition-transform duration-300 group-hover:scale-150" />
-            <span className="font-display text-[11px] uppercase tracking-[0.22em] text-white">
-              Porsche
-            </span>
-            <span className="font-mono text-[8px] uppercase tracking-[0.25em] text-white/45">
-              press to start
+            <span className="font-mono text-[9px] uppercase leading-tight tracking-[0.25em] text-white">
+              Fire
+              <br />
+              it up
             </span>
           </span>
         </button>

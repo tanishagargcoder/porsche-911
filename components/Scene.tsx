@@ -529,6 +529,7 @@ export function Scene({
 
       <Rig />
       <Capture />
+      <Thumbnails />
       <PhotoControls active={photo} />
       <Quality level={quality} />
 
@@ -540,6 +541,103 @@ export function Scene({
       <AdaptiveDpr pixelated />
     </Canvas>
   );
+}
+
+const THUMB_W = 320;
+const THUMB_H = 200;
+
+/**
+ * Renders one chapter thumbnail per frame into an off-screen target, so the
+ * index grid shows the real shot rather than a stock image. Costs one small
+ * render each frame for eighteen frames, once, the first time the index opens.
+ */
+function Thumbnails() {
+  const { gl, scene } = useThree();
+  const job = useRef<{
+    i: number;
+    rt: THREE.WebGLRenderTarget | null;
+    cam: THREE.PerspectiveCamera | null;
+    canvas: HTMLCanvasElement | null;
+    buf: Uint8Array | null;
+  }>({ i: 0, rt: null, cam: null, canvas: null, buf: null });
+
+  useFrame(() => {
+    if (!rig.wantThumbs || rig.thumbsDone) return;
+
+    const j = job.current;
+
+    if (!j.rt) {
+      j.rt = new THREE.WebGLRenderTarget(THUMB_W, THUMB_H);
+      j.cam = new THREE.PerspectiveCamera(40, THUMB_W / THUMB_H, 0.1, 120);
+      j.canvas = document.createElement("canvas");
+      j.canvas.width = THUMB_W;
+      j.canvas.height = THUMB_H;
+      j.buf = new Uint8Array(THUMB_W * THUMB_H * 4);
+      rig.thumbs = new Array(SHOTS.length).fill(null);
+    }
+
+    try {
+      renderThumb(j, gl, scene);
+    } catch {
+      // a thumbnail is a nicety; never let it take the scene down with it
+      rig.thumbsDone = true;
+    }
+  });
+
+  return null;
+}
+
+function renderThumb(
+  j: {
+    i: number;
+    rt: THREE.WebGLRenderTarget | null;
+    cam: THREE.PerspectiveCamera | null;
+    canvas: HTMLCanvasElement | null;
+    buf: Uint8Array | null;
+  },
+  gl: THREE.WebGLRenderer,
+  scene: THREE.Scene,
+) {
+  const shot = SHOTS[j.i];
+  const car = carRef.current;
+  const heldYaw = car?.rotation.y ?? 0;
+  const heldX = car?.position.x ?? 0;
+
+  // pose the car and the spare camera exactly as that beat would
+  if (car) {
+    car.rotation.y = shot.yaw;
+    car.position.x = 0;
+  }
+  j.cam!.position.fromArray(shot.cam);
+  j.cam!.fov = shot.fov;
+  j.cam!.updateProjectionMatrix();
+  j.cam!.lookAt(a.fromArray(shot.target));
+
+  gl.setRenderTarget(j.rt);
+  gl.render(scene, j.cam!);
+  gl.setRenderTarget(null);
+  gl.readRenderTargetPixels(j.rt!, 0, 0, THUMB_W, THUMB_H, j.buf!);
+
+  if (car) {
+    car.rotation.y = heldYaw;
+    car.position.x = heldX;
+  }
+
+  // WebGL reads bottom-up; the canvas wants top-down
+  const ctx = j.canvas!.getContext("2d")!;
+  const img = ctx.createImageData(THUMB_W, THUMB_H);
+  for (let y = 0; y < THUMB_H; y++) {
+    const src = (THUMB_H - 1 - y) * THUMB_W * 4;
+    img.data.set(j.buf!.subarray(src, src + THUMB_W * 4), y * THUMB_W * 4);
+  }
+  ctx.putImageData(img, 0, 0);
+  rig.thumbs[j.i] = j.canvas!.toDataURL("image/jpeg", 0.7);
+
+  j.i += 1;
+  if (j.i >= SHOTS.length) {
+    rig.thumbsDone = true;
+    j.rt!.dispose();
+  }
 }
 
 /**

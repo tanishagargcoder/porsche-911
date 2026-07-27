@@ -19,6 +19,13 @@ export const rig = {
    * than the card showing a recorded preview — we have the real thing running.
    */
   preview: null as number | null,
+  /**
+   * Card thumbnails for the index, rendered off-screen from the real scene —
+   * one shot per frame so nothing stutters — rather than shipped as images.
+   */
+  thumbs: [] as (string | null)[],
+  wantThumbs: false,
+  thumbsDone: false,
   /** km/h during the closing run — 0 whenever the car is parked */
   speed: 0,
   /**
