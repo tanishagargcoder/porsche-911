@@ -120,12 +120,24 @@ function HeroBlock({
           </span>
         </div>
 
+        {/* the headline lands a line at a time rather than fading in as a block */}
         <h1 className="font-display uppercase leading-[0.86] tracking-[-0.02em] text-white">
-          <span className="block text-[19vw] md:text-[9.5rem]">911</span>
-          <span className="block text-[19vw] md:text-[9.5rem]">Turbo</span>
+          <span
+            className="gate-in block text-[19vw] md:text-[9.5rem]"
+            style={{ animationDelay: "60ms" }}
+          >
+            911
+          </span>
+          <span
+            className="gate-in block text-[19vw] md:text-[9.5rem]"
+            style={{ animationDelay: "150ms" }}
+          >
+            Turbo
+          </span>
           <span
             key={paint.name}
-            className="mt-3 block text-[7vw] text-ruby md:text-[2.6rem]"
+            className="gate-in mt-3 block text-[7vw] text-ruby md:text-[2.6rem]"
+            style={{ animationDelay: "240ms" }}
           >
             {paint.name}
           </span>

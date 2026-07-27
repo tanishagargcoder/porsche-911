@@ -20,12 +20,15 @@ import {
   Noise,
   Vignette,
 } from "@react-three/postprocessing";
-import { BlendFunction } from "postprocessing";
+import {
+  BlendFunction,
+  type BloomEffect,
+  type ChromaticAberrationEffect,
+} from "postprocessing";
 import { Porsche } from "./Porsche";
 import { SHOTS } from "@/lib/shots";
 import { clamp, easeInOut, intro, INTRO_MS, range, scroll } from "@/lib/scroll";
 import { rig } from "@/lib/rig";
-import { whoosh } from "@/lib/audio";
 import type { Caliper, Wheel } from "@/lib/config";
 
 const camPos = new THREE.Vector3();
@@ -81,7 +84,6 @@ function Rig({
   const { camera, size, pointer } = useThree();
   const settled = useRef(false);
   const drift = useRef(new THREE.Vector2());
-  const whooshed = useRef(false);
 
   useFrame((_, delta) => {
     if (rig.photo) return; // OrbitControls owns the camera in photo mode
@@ -107,12 +109,8 @@ function Rig({
     const launch = Math.pow(leaving, 2.4) * 62;
     rig.speed = leaving > 0.02 ? Math.min(305, Math.pow(leaving, 1.5) * 340) : 0;
 
-    if (leaving > 0.28 && !whooshed.current) {
-      whooshed.current = true;
-      whoosh(1.1);
-    } else if (leaving < 0.05) {
-      whooshed.current = false;
-    }
+    // the closing run is silent on purpose — the engine is only heard once, at
+    // ignition, and repeating it later cheapens it
 
     if (car.current) {
       car.current.position.x = passing
@@ -176,8 +174,13 @@ function Rig({
     camPos.addScaledVector(right, -drift.current.x * reach);
     camPos.y += drift.current.y * reach * 0.6;
 
-    // frame one lands exactly on pose; after that the camera drifts into place
-    const k = settled.current ? 1 - Math.pow(0.0015, delta) : 1;
+    // Frame one lands exactly on pose; after that the camera drifts into place.
+    // The drift is distance-aware: the jump out of the turntable into the first
+    // macro shot is about five metres, and a fixed rate makes that read as the
+    // camera sticking and then catching up.
+    const far = camera.position.distanceTo(camPos);
+    const rate = far > 1.5 ? 0.00002 : 0.0015;
+    const k = settled.current ? 1 - Math.pow(rate, delta) : 1;
     settled.current = true;
 
     camera.position.lerp(camPos, k);
@@ -241,6 +244,10 @@ function Studio({ tint, night }: { tint: string; night: boolean }) {
  */
 function Effects({ focus, full }: { focus: THREE.Vector3; full: boolean }) {
   const dof = useRef<React.ComponentRef<typeof DepthOfField>>(null);
+  // these two forward the raw postprocessing effect, so type them as such
+  const fringe = useRef<ChromaticAberrationEffect>(null);
+  const glow = useRef<BloomEffect>(null);
+  const speed = useRef(0);
 
   useEffect(() => {
     const e = dof.current;
@@ -249,6 +256,18 @@ function Effects({ focus, full }: { focus: THREE.Vector3; full: boolean }) {
   }, [focus]);
 
   useFrame((_, delta) => {
+    // scroll hard and the image starts to smear and glow — the whole point of
+    // the effect is that speed is something you feel rather than read
+    speed.current += (scroll.velocity - speed.current) * Math.min(1, delta * 4);
+    const v = speed.current;
+
+    if (fringe.current) {
+      fringe.current.offset.set(0.0005 + v * 0.004, 0.0005 + v * 0.0022);
+    }
+    if (glow.current) {
+      glow.current.intensity = 0.75 + v * 0.9;
+    }
+
     const m = dof.current?.cocMaterial;
     if (!m) return;
     // wide beats keep the whole car sharp, macro beats throw everything away
@@ -260,6 +279,7 @@ function Effects({ focus, full }: { focus: THREE.Vector3; full: boolean }) {
   // conditional child isn't allowed — and phones can't afford the bokeh pass
   const bloom = (
     <Bloom
+      ref={glow}
       intensity={0.75}
       luminanceThreshold={0.62}
       luminanceSmoothing={0.28}
@@ -269,6 +289,7 @@ function Effects({ focus, full }: { focus: THREE.Vector3; full: boolean }) {
   const grade = (
     <>
       <ChromaticAberration
+        ref={fringe}
         offset={new THREE.Vector2(0.0005, 0.0005)}
         radialModulation={false}
         modulationOffset={0}
@@ -290,11 +311,14 @@ function Effects({ focus, full }: { focus: THREE.Vector3; full: boolean }) {
   return (
     <EffectComposer enableNormalPass={false} multisampling={0}>
       {bloom}
+      {/* half-res bokeh: the blur hides the resolution, and this is the pass
+          that costs the most when the macro shots come in */}
       <DepthOfField
         ref={dof}
         focusDistance={6}
         focusRange={4}
-        bokehScale={3.2}
+        bokehScale={2.4}
+        resolutionScale={0.4}
       />
       {grade}
     </EffectComposer>
@@ -417,10 +441,12 @@ function Floor({
       <circleGeometry args={[22, 64]} />
       {reflective ? (
         <MeshReflectorMaterial
-          resolution={512}
+          // the floor re-renders the whole scene every frame; a quarter of the
+          // pixels is invisible under this much blur and costs a lot less
+          resolution={256}
           mixBlur={1}
           mixStrength={night ? 32 : 22}
-          blur={[300, 90]}
+          blur={[200, 60]}
           depthScale={1.1}
           minDepthThreshold={0.4}
           maxDepthThreshold={1.35}

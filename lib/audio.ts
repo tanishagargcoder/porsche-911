@@ -47,6 +47,27 @@ function noise(c: AudioContext) {
  * Try to open the audio device. Browsers only allow this off the back of a real
  * gesture, so this returns false when it's blocked and the caller shows a gate.
  */
+/**
+ * Must run *synchronously* inside a real tap — iOS only unlocks audio on the
+ * same tick as the gesture, so anything behind an `await` is already too late.
+ * The one-sample silent buffer is what iOS actually counts as "the user started
+ * audio"; resuming alone isn't enough there.
+ */
+export function prime() {
+  const c = context();
+  if (!c) return false;
+
+  void c.resume();
+
+  const buffer = c.createBuffer(1, 1, 22050);
+  const source = c.createBufferSource();
+  source.buffer = buffer;
+  source.connect(c.destination);
+  source.start(0);
+
+  return true;
+}
+
 export async function unlock() {
   const c = context();
   if (!c) return false;
@@ -62,6 +83,18 @@ export async function unlock() {
   const gaveUp = new Promise<boolean>((r) => setTimeout(() => r(false), 350));
 
   return Promise.race([resumed, gaveUp]);
+}
+
+/**
+ * Phones suspend the context when the tab goes to the background. Once it has
+ * been unlocked by a gesture, resuming on return is allowed without another one.
+ */
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && enabled && ctx?.state === "suspended") {
+      void ctx.resume();
+    }
+  });
 }
 
 export function setEnabled(on: boolean) {

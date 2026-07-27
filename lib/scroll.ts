@@ -2,7 +2,11 @@
  * Scroll and intro progress live outside React on purpose — the camera reads
  * them every frame and re-rendering the tree 60 times a second would be silly.
  */
-export const scroll = { progress: 0 };
+export const scroll = {
+  progress: 0,
+  /** 0 → 1-ish, how hard the page is being scrolled right now */
+  velocity: 0,
+};
 
 /** how long the opening fly-past runs, in ms — the CSS keyframes match this */
 export const INTRO_MS = 3600;

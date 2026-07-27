@@ -99,16 +99,34 @@ export function Configurator({
   };
 
   return (
-    <div
-      id="build"
-      className="fixed bottom-5 left-1/2 z-30 w-[min(92vw,26rem)] -translate-x-1/2 md:bottom-7"
-    >
+    <>
+      {/* on phones the panel is a sheet — dim everything behind it so the copy
+          and the HUD don't read through the glass */}
+      <div
+        onClick={() => setOpen(false)}
+        style={{ opacity: open ? 1 : 0 }}
+        className={`fixed inset-0 z-20 bg-black/55 backdrop-blur-[2px] transition-opacity duration-300 md:hidden ${
+          open ? "" : "pointer-events-none"
+        }`}
+      />
+
+      <div
+        id="build"
+        className="fixed bottom-5 left-1/2 z-30 w-[min(92vw,26rem)] -translate-x-1/2 md:bottom-7"
+      >
       {/* the panel */}
       <div
-        className={`mb-3 origin-bottom overflow-hidden rounded-2xl border border-white/10 bg-black/70 backdrop-blur-md transition-all duration-300 ${
+        // height and opacity are inline on purpose: this is the one piece of UI
+        // that must open, and an arbitrary Tailwind class is one stale CSS build
+        // away from silently staying shut
+        style={{
+          maxHeight: open ? "30rem" : 0,
+          opacity: open ? 1 : 0,
+        }}
+        className={`mb-3 origin-bottom overflow-hidden rounded-2xl border bg-black/70 backdrop-blur-md transition-all duration-300 ${
           open
-            ? "max-h-[28rem] opacity-100"
-            : "pointer-events-none max-h-0 border-transparent opacity-0"
+            ? "border-white/10"
+            : "pointer-events-none border-transparent"
         }`}
       >
         <div className="divide-y divide-white/10 px-5 py-2">
@@ -207,6 +225,7 @@ export function Configurator({
           </span>
         </button>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

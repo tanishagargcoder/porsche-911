@@ -24,8 +24,8 @@ export function TopBar({
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-30">
       <div className="pointer-events-auto flex items-center justify-between gap-6 border-b border-white/10 bg-gradient-to-b from-black/70 to-transparent px-5 py-4 backdrop-blur-[2px] md:px-8">
-        <div className="flex items-baseline gap-3">
-          <span className="font-display text-sm tracking-[0.42em] text-white">
+        <div className="flex shrink-0 items-baseline gap-3">
+          <span className="font-display text-xs tracking-[0.3em] text-white sm:text-sm sm:tracking-[0.42em]">
             PORSCHE
           </span>
           <span className="hidden font-mono text-[9px] uppercase tracking-[0.3em] text-white/35 sm:inline">

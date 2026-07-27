@@ -11,7 +11,9 @@ const GLYPHS = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#$%&/\\<>*+";
 export function Scramble({
   text,
   run = true,
-  speed = 34,
+  // one React render per tick per label, and the macro beats show several at
+  // once — 34ms was enough of them to be felt
+  speed = 55,
   className,
 }: {
   text: string;

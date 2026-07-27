@@ -19,7 +19,7 @@ import {
   wheelBySlug,
 } from "@/lib/config";
 import { clamp, intro, INTRO_MS, scroll } from "@/lib/scroll";
-import { rev, setEnabled, tick, unlock, whoosh } from "@/lib/audio";
+import { prime, rev, setEnabled, tick, unlock, whoosh } from "@/lib/audio";
 import { releaseScrollTween, tweenScrollTo } from "@/lib/tween";
 
 /** WebGL never runs on the server */
@@ -84,9 +84,20 @@ export default function Home() {
 
   /** smooth scroll + the scroll→camera pipe */
   useEffect(() => {
+    let lastY = window.scrollY;
+    let lastT = performance.now();
+
     const update = () => {
       const max = document.body.scrollHeight - window.innerHeight;
       scroll.progress = max > 0 ? clamp(window.scrollY / max) : 0;
+
+      // px per ms, normalised — the effects lean on this for the sense of speed
+      const now = performance.now();
+      const dt = Math.max(16, now - lastT);
+      const v = Math.abs(window.scrollY - lastY) / dt;
+      scroll.velocity = clamp(v / 4);
+      lastY = window.scrollY;
+      lastT = now;
     };
 
     const reduced = window.matchMedia(
@@ -209,6 +220,7 @@ export default function Home() {
       if (key === "s") {
         setSound((v) => {
           const next = !v;
+          if (next) prime();
           setEnabled(next);
           if (next) rev();
           return next;
@@ -265,8 +277,9 @@ export default function Home() {
     };
   }, [film]);
 
-  const enterWithSound = async () => {
-    await unlock();
+  /** no await anywhere in here — iOS unlocks audio only on the gesture's own tick */
+  const enterWithSound = () => {
+    prime();
     setEnabled(true);
     setSound(true);
     begin(true);
@@ -332,6 +345,7 @@ export default function Home() {
           onJump={jump}
           film={film}
           toggleFilm={toggleFilm}
+          buildOpen={buildOpen}
         />
       </div>
 

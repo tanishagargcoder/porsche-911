@@ -97,24 +97,33 @@ export function Gate({
           <span className="relative flex flex-col items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-ruby transition-transform duration-300 group-hover:scale-150" />
             <span className="font-mono text-[9px] uppercase leading-tight tracking-[0.25em] text-white">
-              Start
+              Fire
               <br />
-              engine
+              it up
             </span>
           </span>
         </button>
 
+        <span
+          className="gate-in mt-6 font-mono text-[9px] uppercase tracking-[0.3em] text-white/30"
+          style={{ animationDelay: "520ms" }}
+        >
+          Ignition on the left, as always
+        </span>
+
         <button
           onClick={onSkip}
-          className="gate-in mt-8 font-mono text-[10px] uppercase tracking-[0.3em] text-white/35 underline underline-offset-4 transition-colors hover:text-white/70"
+          className="gate-in mt-6 font-mono text-[10px] uppercase tracking-[0.3em] text-white/35 underline underline-offset-4 transition-colors hover:text-white/70"
           style={{ animationDelay: "560ms" }}
         >
           Continue without sound
         </button>
       </div>
 
-      <span className="absolute bottom-7 font-mono text-[9px] uppercase tracking-[0.3em] text-white/20">
-        Sound on · headphones recommended
+      {/* the ringer switch mutes Web Audio on iPhones and nothing in the page
+          can override it, so say so rather than let it look broken */}
+      <span className="absolute bottom-7 px-6 text-center font-mono text-[9px] uppercase leading-relaxed tracking-[0.3em] text-white/20">
+        Headphones recommended · iPhone: ringer switch on
       </span>
     </div>
   );

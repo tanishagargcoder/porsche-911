@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { SHOTS, PAINTS } from "@/lib/shots";
 import { clamp, scroll } from "@/lib/scroll";
 import { rig } from "@/lib/rig";
-import { flutter, setEnabled, rev } from "@/lib/audio";
+import { prime, setEnabled, rev } from "@/lib/audio";
 import { Scramble } from "./Scramble";
 
 /** thin ruby corner brackets, the frame the whole page sits inside */
@@ -54,6 +54,7 @@ export function Hud({
   onJump,
   film,
   toggleFilm,
+  buildOpen,
 }: {
   paint: string;
   photo: boolean;
@@ -63,12 +64,14 @@ export function Hud({
   onJump: (index: number) => void;
   film: boolean;
   toggleFilm: () => void;
+  /** the build panel expands upwards over this corner, so get out of its way */
+  buildOpen: boolean;
 }) {
   const [pct, setPct] = useState(0);
   const [active, setActive] = useState(0);
   const [speed, setSpeed] = useState(0);
+  const [wipe, setWipe] = useState(0);
   const frame = useRef(0);
-  const lastBeat = useRef(0);
 
   useEffect(() => {
     const tick = () => {
@@ -85,13 +88,12 @@ export function Hud({
       });
 
       const beat = Math.round(p * (SHOTS.length - 1));
-      setActive((prev) => (beat === prev ? prev : beat));
-
-      // blow-off valve every time a new macro shot locks on
-      if (beat !== lastBeat.current) {
-        if (SHOTS[beat]?.kind === "detail") flutter();
-        lastBeat.current = beat;
-      }
+      setActive((prev) => {
+        if (beat === prev) return prev;
+        // one wipe per beat change, keyed so the animation restarts
+        setWipe((w) => w + 1);
+        return beat;
+      });
 
       frame.current = requestAnimationFrame(tick);
     };
@@ -115,6 +117,8 @@ export function Hud({
 
   const toggleSound = () => {
     const next = !sound;
+    // prime first and without awaiting, or iOS never opens the device
+    if (next) prime();
     setSound(next);
     setEnabled(next);
     if (next) rev();
@@ -127,6 +131,30 @@ export function Hud({
 
       {/* scanlines + faint grid, the whole hacker-console texture */}
       <div className="scanlines pointer-events-none fixed inset-0 z-[6]" />
+
+      {/* a ruby line wipes across whenever the timeline lands on a new beat */}
+      <span
+        key={wipe}
+        className="beat-wipe pointer-events-none fixed left-0 top-1/2 z-20 h-px w-full bg-gradient-to-r from-transparent via-ruby to-transparent"
+      />
+
+      {/* speed streaks while the car is actually pulling away */}
+      {speed > 40 && (
+        <div className="run-lines pointer-events-none fixed inset-0 z-20">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <span
+              key={i}
+              className="absolute h-px bg-gradient-to-r from-transparent via-white/45 to-transparent"
+              style={{
+                top: `${10 + i * 8.5}%`,
+                left: "-40%",
+                width: `${26 + ((i * 41) % 44)}%`,
+                animationDelay: `${(i % 5) * 70}ms`,
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* the paint and build readouts change under the reader's feet, so
           announce them once rather than on every scramble frame */}
@@ -164,7 +192,11 @@ export function Hud({
 
       {/* bottom left — progress and the chevrons that keep pointing down.
           Sits above the configurator on phones so the two never collide. */}
-      <div className="pointer-events-none fixed bottom-32 left-5 z-20 flex items-end gap-4 font-mono text-[10px] uppercase tracking-[0.25em] text-white/45 md:bottom-8 md:left-8">
+      <div
+        className={`pointer-events-none fixed bottom-32 left-5 z-20 flex items-end gap-4 font-mono text-[10px] uppercase tracking-[0.25em] text-white/45 transition-opacity duration-300 md:bottom-8 md:left-8 ${
+          buildOpen ? "opacity-0 md:opacity-100" : "opacity-100"
+        }`}
+      >
         <div>
           <div className="mb-2 text-white/80 tabular-nums">
             {String(pct).padStart(3, "0")}%
@@ -208,7 +240,13 @@ export function Hud({
       </div>
 
       {/* bottom right — sound, and photo mode once you reach the end */}
-      <div className="fixed bottom-32 right-5 z-30 flex flex-col items-end gap-3 font-mono text-[10px] uppercase tracking-[0.25em] md:bottom-8 md:right-8">
+      <div
+        className={`fixed bottom-32 right-5 z-30 flex flex-col items-end gap-3 font-mono text-[10px] uppercase tracking-[0.25em] transition-opacity duration-300 md:bottom-8 md:right-8 ${
+          buildOpen
+            ? "pointer-events-none opacity-0 md:pointer-events-auto md:opacity-100"
+            : "opacity-100"
+        }`}
+      >
         <button
           onClick={toggleFilm}
           aria-pressed={film}
