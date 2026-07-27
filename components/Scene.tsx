@@ -24,6 +24,7 @@ import {
   BlendFunction,
   type BloomEffect,
   type ChromaticAberrationEffect,
+  type DepthOfFieldEffect,
 } from "postprocessing";
 import { Porsche } from "./Porsche";
 import { SHOTS } from "@/lib/shots";
@@ -205,7 +206,7 @@ function Rig() {
 /** studio rig built from area lights — reflections streak across the paint like a shoot */
 function Studio({ tint, night }: { tint: string; night: boolean }) {
   return (
-    <Environment resolution={512}>
+    <Environment resolution={256}>
       <color attach="background" args={["#05060a"]} />
       <Lightformer
         intensity={night ? 1.4 : 6}
@@ -247,17 +248,35 @@ function Studio({ tint, night }: { tint: string; night: boolean }) {
  * little grain and fringing so it reads like footage rather than a render.
  */
 function Effects({ full }: { full: boolean }) {
-  const dof = useRef<React.ComponentRef<typeof DepthOfField>>(null);
-  // these two forward the raw postprocessing effect, so type them as such
-  const fringe = useRef<ChromaticAberrationEffect>(null);
-  const glow = useRef<BloomEffect>(null);
+  const dof = useRef<DepthOfFieldEffect | null>(null);
+  const fringe = useRef<ChromaticAberrationEffect | null>(null);
+  const glow = useRef<BloomEffect | null>(null);
   const speed = useRef(0);
 
-  useEffect(() => {
-    const e = dof.current;
-    // the effect recomputes focus distance from this point every frame
-    if (e) e.target = focusPoint;
-  }, []);
+  /**
+   * These are bound with `onUpdate` rather than `ref` on purpose.
+   *
+   * @react-three/postprocessing memoises each effect's args on
+   * `JSON.stringify(props)`, and in React 19 `ref` is itself a prop — so once a
+   * ref is populated with the effect instance (which reaches the camera, and
+   * from there the whole scene graph) the next render throws "Converting
+   * circular structure to JSON". A function prop just serialises to undefined.
+   */
+  const bind = (key: "dof" | "fringe" | "glow") => {
+    const onUpdate = (self: unknown) => {
+      if (key === "dof") {
+        dof.current = self as DepthOfFieldEffect;
+        // the effect recomputes focus distance from this point every frame
+        dof.current.target = focusPoint;
+      }
+      if (key === "fringe") fringe.current = self as ChromaticAberrationEffect;
+      if (key === "glow") glow.current = self as BloomEffect;
+    };
+
+    // the wrappers don't declare onUpdate even though R3F forwards it to the
+    // instance, so it goes in as a spread rather than a typed attribute
+    return { onUpdate } as unknown as Record<never, never>;
+  };
 
   useFrame((_, delta) => {
     // scroll hard and the image starts to smear and glow — the whole point of
@@ -283,7 +302,7 @@ function Effects({ full }: { full: boolean }) {
   // conditional child isn't allowed — and phones can't afford the bokeh pass
   const bloom = (
     <Bloom
-      ref={glow}
+      {...bind("glow")}
       intensity={0.75}
       luminanceThreshold={0.62}
       luminanceSmoothing={0.28}
@@ -293,7 +312,7 @@ function Effects({ full }: { full: boolean }) {
   const grade = (
     <>
       <ChromaticAberration
-        ref={fringe}
+        {...bind("fringe")}
         offset={new THREE.Vector2(0.0005, 0.0005)}
         radialModulation={false}
         modulationOffset={0}
@@ -318,7 +337,7 @@ function Effects({ full }: { full: boolean }) {
       {/* half-res bokeh: the blur hides the resolution, and this is the pass
           that costs the most when the macro shots come in */}
       <DepthOfField
-        ref={dof}
+        {...bind("dof")}
         focusDistance={6}
         focusRange={4}
         bokehScale={2.4}
@@ -378,12 +397,12 @@ export function Scene({
       className="!fixed inset-0"
       // PCFSoft is deprecated in three 0.185; PCF is the supported one now
       shadows="percentage"
-      dpr={[1, 2]}
+      // 1.5 is plenty with this much post-processing, and every extra 0.5 costs
+      // memory across a dozen render targets at once
+      dpr={[1, 1.5]}
       gl={{
         antialias: false,
         toneMappingExposure: 1.1,
-        // needed so photo mode can read the frame back off the canvas
-        preserveDrawingBuffer: true,
         powerPreference: "high-performance",
       }}
       camera={{ position: INTRO_CAM, fov: INTRO_FOV, near: 0.1, far: 120 }}
@@ -405,7 +424,8 @@ export function Scene({
         penumbra={1}
         intensity={night ? 28 : 120}
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        // 1024 is indistinguishable here and a quarter of the memory
+        shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.0005}
       />
       <spotLight
@@ -438,13 +458,14 @@ export function Scene({
         scale={16}
         blur={2.2}
         far={4}
-        resolution={1024}
+        resolution={512}
         color="#000000"
       />
 
       <Floor reflective={quality > 0} night={night} />
 
       <Rig />
+      <Capture />
       <PhotoControls active={photo} />
       <Quality level={quality} />
 
@@ -456,6 +477,27 @@ export function Scene({
       <AdaptiveDpr pixelated />
     </Canvas>
   );
+}
+
+/**
+ * Draws one frame straight to the canvas and reads it back. This bypasses the
+ * effect composer, so a saved shot has no bloom or grain on it — the trade for
+ * not holding a second copy of the framebuffer for the whole session.
+ */
+function Capture() {
+  const { gl, scene, camera } = useThree();
+
+  useEffect(() => {
+    rig.capture = () => {
+      gl.render(scene, camera);
+      return gl.domElement.toDataURL("image/png");
+    };
+    return () => {
+      rig.capture = null;
+    };
+  }, [gl, scene, camera]);
+
+  return null;
 }
 
 /** the floor loses its mirror first when the GPU is struggling */

@@ -107,11 +107,11 @@ export function Hud({
 
   /** photo mode: pull the current frame straight off the canvas */
   const saveShot = () => {
-    const canvas = document.querySelector("canvas");
-    if (!canvas) return;
+    const png = rig.capture?.();
+    if (!png) return;
     const link = document.createElement("a");
     link.download = `911-${swatch.name.toLowerCase().replace(/\s+/g, "-")}.png`;
-    link.href = canvas.toDataURL("image/png");
+    link.href = png;
     link.click();
   };
 

@@ -14,4 +14,10 @@ export const rig = {
   photo: false,
   /** km/h during the closing run — 0 whenever the car is parked */
   speed: 0,
+  /**
+   * Photo mode's frame grab. Registered from inside the Canvas: the renderer
+   * no longer keeps the drawing buffer around (it was costing enough memory to
+   * lose the GL context), so the frame has to be drawn on demand.
+   */
+  capture: null as null | (() => string | null),
 };

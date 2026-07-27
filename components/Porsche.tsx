@@ -200,9 +200,19 @@ export function Porsche({
 
   return (
     <>
-      <group ref={group}>
-        <primitive object={model} />
-      </group>
+      {/* attached imperatively rather than with <primitive object={…} />: that
+          prop puts a Three object into the React tree, and anything that walks
+          props to report an error chokes on its parent/children cycle */}
+      <group
+        ref={(g) => {
+          group.current = g;
+          if (!g) return;
+          g.add(model);
+          return () => {
+            g.remove(model);
+          };
+        }}
+      />
 
       {/* light cones out of the headlamps — bloom does the rest */}
       <group ref={beams} visible={false}>

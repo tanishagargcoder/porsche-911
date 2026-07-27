@@ -7,6 +7,7 @@ import { useProgress } from "@react-three/drei";
 import { Overlay } from "@/components/Overlay";
 import { Configurator } from "@/components/Configurator";
 import { TopBar } from "@/components/TopBar";
+import { SceneBoundary } from "@/components/SceneBoundary";
 import { Loader } from "@/components/Loader";
 import { Intro } from "@/components/Intro";
 import { Gate } from "@/components/Gate";
@@ -297,13 +298,15 @@ export default function Home() {
         Skip to the configurator
       </a>
 
-      <Scene
-        paint={paint}
-        wheel={wheel}
-        caliper={caliper}
-        photo={photo}
-        night={night}
-      />
+      <SceneBoundary>
+        <Scene
+          paint={paint}
+          wheel={wheel}
+          caliper={caliper}
+          photo={photo}
+          night={night}
+        />
+      </SceneBoundary>
       <div className="vignette pointer-events-none fixed inset-0 z-[5]" />
 
       <div
