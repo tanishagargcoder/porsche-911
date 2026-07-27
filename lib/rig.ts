@@ -12,6 +12,8 @@ export const rig = {
   beat: 0,
   /** true while the user is dragging the car around in photo mode */
   photo: false,
+  /** true while the build panel is open — the camera holds a showcase pose */
+  configuring: false,
   /** km/h during the closing run — 0 whenever the car is parked */
   speed: 0,
   /**

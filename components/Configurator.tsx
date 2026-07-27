@@ -100,12 +100,11 @@ export function Configurator({
 
   return (
     <>
-      {/* on phones the panel is a sheet — dim everything behind it so the copy
-          and the HUD don't read through the glass */}
+      {/* a tap-away layer, deliberately transparent: the whole point of the
+          panel is watching the car change behind it */}
       <div
         onClick={() => setOpen(false)}
-        style={{ opacity: open ? 1 : 0 }}
-        className={`fixed inset-0 z-20 bg-black/55 backdrop-blur-[2px] transition-opacity duration-300 md:hidden ${
+        className={`fixed inset-0 z-20 md:hidden ${
           open ? "" : "pointer-events-none"
         }`}
       />

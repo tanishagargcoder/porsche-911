@@ -319,6 +319,7 @@ export default function Home() {
           caliper={caliper}
           photo={photo}
           night={night}
+          configuring={buildOpen}
         />
       </SceneBoundary>
       <div className="vignette pointer-events-none fixed inset-0 z-[5]" />
@@ -328,9 +329,15 @@ export default function Home() {
           phase === "live" ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
+        {/* the copy steps aside for photo mode, and on phones for the build
+            panel too — there the car needs the whole screen to be readable */}
         <div
           className={`transition-opacity duration-500 ${
-            photo ? "pointer-events-none opacity-0" : "opacity-100"
+            photo
+              ? "pointer-events-none opacity-0"
+              : buildOpen
+                ? "pointer-events-none opacity-0 md:pointer-events-auto md:opacity-100"
+                : "opacity-100"
           }`}
         >
           <Overlay

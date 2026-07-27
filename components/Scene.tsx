@@ -73,6 +73,15 @@ const RUN_TO = 46;
 /** the beat the headlamps come on at, and how long the ignition takes */
 const IGNITE_AT = 5.4;
 
+/**
+ * Where the camera goes while the build panel is open: a front three-quarter
+ * that carries the paint across the flank and still shows a front wheel, so
+ * the paint, the rim finish and the caliper are all changing on screen.
+ */
+const CONFIG_CAM: [number, number, number] = [4.9, 1.15, 4.6];
+const CONFIG_TARGET: [number, number, number] = [0.15, 0.62, 0.15];
+const CONFIG_FOV = 33;
+
 /** the current pose of the scroll timeline, ignoring the intro */
 function poseFromScroll() {
   const p = clamp(scroll.progress) * (SHOTS.length - 1);
@@ -89,6 +98,7 @@ function Rig() {
   const { camera, size, pointer } = useThree();
   const settled = useRef(false);
   const drift = useRef(new THREE.Vector2());
+  const configure = useRef(0);
 
   useFrame((_, delta) => {
     if (rig.photo) return; // OrbitControls owns the camera in photo mode
@@ -166,6 +176,18 @@ function Rig() {
       camTarget.fromArray(CREST_TARGET);
       // portrait crops the sides, so open up or the badge overfills the frame
       fov = aspect < 1.35 ? CREST_FOV + 7 : CREST_FOV;
+    }
+
+    // while the build panel is open the shot list hands over: the camera holds
+    // a pose where every configurable part is on screen at once
+    configure.current +=
+      ((rig.configuring ? 1 : 0) - configure.current) * Math.min(1, delta * 2.4);
+
+    if (configure.current > 0.001) {
+      const c = easeInOut(configure.current);
+      camPos.lerp(a.fromArray(CONFIG_CAM), c);
+      camTarget.lerp(b.fromArray(CONFIG_TARGET), c);
+      fov += (CONFIG_FOV - fov) * c;
     }
 
     // ---- pointer parallax ------------------------------------------------
@@ -354,13 +376,19 @@ export function Scene({
   caliper,
   photo,
   night,
+  configuring,
 }: {
   paint: string;
   wheel: Wheel;
   caliper: Caliper;
   photo: boolean;
   night: boolean;
+  configuring: boolean;
 }) {
+  useEffect(() => {
+    rig.configuring = configuring;
+  }, [configuring]);
+
   /** 2 = everything, 1 = no bokeh, 0 = no mirror either */
   const [quality, setQuality] = useState(2);
   const [lost, setLost] = useState(false);
