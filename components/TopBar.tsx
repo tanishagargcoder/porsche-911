@@ -33,7 +33,8 @@ export function TopBar({
           </span>
         </div>
 
-        <nav className="hidden items-center gap-7 md:flex">
+        {/* phones get the same chapters, just scrolled sideways rather than dropped */}
+        <nav className="flex flex-1 items-center gap-5 overflow-x-auto px-2 [scrollbar-width:none] md:flex-none md:justify-center md:gap-7 md:overflow-visible md:px-0">
           {NAV.map((item) => {
             const index = SHOTS.findIndex((s) => s.id === item.id);
             if (index < 0) return null;
@@ -41,7 +42,7 @@ export function TopBar({
               <button
                 key={item.id}
                 onClick={() => onJump(index)}
-                className="group relative font-mono text-[10px] uppercase tracking-[0.28em] text-white/45 transition-colors hover:text-white"
+                className="group relative shrink-0 whitespace-nowrap py-2 font-mono text-[10px] uppercase tracking-[0.28em] text-white/45 transition-colors hover:text-white"
               >
                 {item.label}
                 <span className="absolute -bottom-1.5 left-0 h-px w-0 bg-ruby transition-all duration-300 group-hover:w-full" />
@@ -50,12 +51,12 @@ export function TopBar({
           })}
         </nav>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex shrink-0 items-center gap-2.5">
           <span
             className="h-2 w-2 rounded-full transition-colors duration-500"
             style={{ background: paint.hex }}
           />
-          <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-white/70">
+          <span className="hidden font-mono text-[10px] uppercase tracking-[0.28em] text-white/70 sm:inline">
             {paint.name}
           </span>
           <span className="hidden font-mono text-[9px] tracking-[0.25em] text-white/30 sm:inline">

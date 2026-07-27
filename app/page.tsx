@@ -140,6 +140,16 @@ export default function Home() {
 
     let cancelled = false;
 
+    // ?gate=1 forces the ignition screen even where audio would auto-unlock,
+    // which is the only way to look at it on a browser that doesn't block
+    const forced =
+      new URLSearchParams(window.location.search).get("gate") === "1";
+
+    if (forced) {
+      setPhase("gate");
+      return;
+    }
+
     const t = window.setTimeout(async () => {
       const ok = await unlock();
       if (cancelled) return;
@@ -328,7 +338,7 @@ export default function Home() {
       {/* mounted exactly when the fly-past starts, so CSS and WebGL stay in step */}
       {phase === "intro" && <Intro />}
       {phase === "gate" && (
-        <Gate onEnter={enterWithSound} onSkip={enterMuted} />
+        <Gate paint={swatch} onEnter={enterWithSound} onSkip={enterMuted} />
       )}
       <Loader name={swatch.name} />
     </main>

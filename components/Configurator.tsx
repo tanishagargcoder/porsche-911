@@ -42,13 +42,18 @@ function Dot({
       title={label}
       aria-label={label}
       aria-pressed={active}
-      className={`h-5 w-5 rounded-full transition-transform duration-200 hover:scale-125 ${
-        active
-          ? "ring-2 ring-white/80 ring-offset-2 ring-offset-black"
-          : "ring-1 ring-white/20"
-      }`}
-      style={{ background: hex }}
-    />
+      // the swatch stays 20px; the button around it is a finger-sized target
+      className="group flex h-11 w-11 shrink-0 items-center justify-center"
+    >
+      <span
+        className={`h-5 w-5 rounded-full transition-transform duration-200 group-hover:scale-125 ${
+          active
+            ? "ring-2 ring-white/80 ring-offset-2 ring-offset-black"
+            : "ring-1 ring-white/20"
+        }`}
+        style={{ background: hex }}
+      />
+    </button>
   );
 }
 
@@ -174,8 +179,8 @@ export function Configurator({
       </div>
 
       {/* the bar */}
-      <div className="flex items-center justify-between gap-3 rounded-full border border-white/10 bg-black/60 px-4 py-3 backdrop-blur-md">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-2 rounded-full border border-white/10 bg-black/60 px-2 py-1 backdrop-blur-md md:px-3">
+        <div className="flex items-center">
           {PAINTS.map((p) => (
             <Dot
               key={p.hex}
@@ -190,7 +195,7 @@ export function Configurator({
         <button
           onClick={() => setOpen(!open)}
           aria-expanded={open}
-          className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-white/45 transition-colors hover:text-white"
+          className="flex shrink-0 items-center gap-2 px-3 py-3 font-mono text-[10px] uppercase tracking-[0.25em] text-white/45 transition-colors hover:text-white"
         >
           Build
           <span
