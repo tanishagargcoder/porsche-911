@@ -17,9 +17,11 @@ const NAV: { id: string; label: string }[] = [
 export function TopBar({
   paint,
   onJump,
+  onOpenIndex,
 }: {
   paint: Paint;
   onJump: (index: number) => void;
+  onOpenIndex: () => void;
 }) {
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-30">
@@ -33,8 +35,9 @@ export function TopBar({
           </span>
         </div>
 
-        {/* phones get the same chapters, just scrolled sideways rather than dropped */}
-        <nav className="flex flex-1 items-center gap-5 overflow-x-auto px-2 [scrollbar-width:none] md:flex-none md:justify-center md:gap-7 md:overflow-visible md:px-0">
+        {/* quick links on wide screens; phones use the index overlay instead,
+            where the targets are big enough to actually hit */}
+        <nav className="hidden items-center gap-7 md:flex">
           {NAV.map((item) => {
             const index = SHOTS.findIndex((s) => s.id === item.id);
             if (index < 0) return null;
@@ -51,7 +54,19 @@ export function TopBar({
           })}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-2.5">
+        <div className="flex shrink-0 items-center gap-3">
+          <button
+            onClick={onOpenIndex}
+            className="flex items-center gap-2 py-2 font-mono text-[10px] uppercase tracking-[0.28em] text-white/45 transition-colors hover:text-white"
+          >
+            <span className="flex flex-col gap-[3px]">
+              <span className="block h-px w-4 bg-current" />
+              <span className="block h-px w-4 bg-current" />
+              <span className="block h-px w-2.5 bg-current" />
+            </span>
+            Index
+          </button>
+
           <span
             className="h-2 w-2 rounded-full transition-colors duration-500"
             style={{ background: paint.hex }}

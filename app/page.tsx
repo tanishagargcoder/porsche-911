@@ -8,6 +8,8 @@ import { Overlay } from "@/components/Overlay";
 import { Configurator } from "@/components/Configurator";
 import { TopBar } from "@/components/TopBar";
 import { SceneBoundary } from "@/components/SceneBoundary";
+import { Chapters } from "@/components/Chapters";
+import { rig } from "@/lib/rig";
 import { Loader } from "@/components/Loader";
 import { Intro } from "@/components/Intro";
 import { Gate } from "@/components/Gate";
@@ -42,6 +44,9 @@ export default function Home() {
   const [night, setNight] = useState(false);
   const [film, setFilm] = useState(false);
   const [buildOpen, setBuildOpen] = useState(false);
+  const [indexOpen, setIndexOpen] = useState(false);
+  /** snapshotted when the index opens, so the page doesn't re-render per frame */
+  const [beat, setBeat] = useState(0);
   const [wheelSlug, setWheelSlug] = useState(WHEELS[0].slug);
   const [caliperSlug, setCaliperSlug] = useState(CALIPERS[0].slug);
   const lenis = useRef<Lenis | null>(null);
@@ -194,13 +199,13 @@ export default function Home() {
     return () => clearTimeout(finish);
   }, [phase]);
 
-  /** scroll stays locked until the show is over, and while photo mode is on */
+  /** scroll stays locked until the show is over, and behind any full overlay */
   useEffect(() => {
-    const locked = phase !== "live" || photo;
+    const locked = phase !== "live" || photo || indexOpen;
     document.body.style.overflow = locked ? "hidden" : "";
     if (locked) lenis.current?.stop();
     else lenis.current?.start();
-  }, [phase, photo]);
+  }, [phase, photo, indexOpen]);
 
   /** 1–5 for paint, P for photo mode, S for sound */
   useEffect(() => {
@@ -233,9 +238,18 @@ export default function Home() {
     return () => window.removeEventListener("keydown", onKey);
   }, [phase]);
 
-  /** chapter ticks jump the timeline — each beat is one viewport tall */
+  /**
+   * Jump to a beat by measuring where its section actually is. On phones the
+   * browser chrome makes `100vh` taller than `window.innerHeight`, so assuming
+   * one viewport per beat drifts further out with every chapter.
+   */
   const jump = useCallback((index: number) => {
-    tweenScrollTo(index * window.innerHeight, 1300, lenis.current);
+    const section = document.querySelectorAll("section")[index];
+    const y = section
+      ? section.getBoundingClientRect().top + window.scrollY
+      : index * window.innerHeight;
+
+    tweenScrollTo(y, 1300, lenis.current);
   }, []);
 
   /** hands-free run of the whole film, cancelled by any real scroll */
@@ -326,7 +340,20 @@ export default function Home() {
             film={film}
           />
         </div>
-        <TopBar paint={swatch} onJump={jump} />
+        <TopBar
+          paint={swatch}
+          onJump={jump}
+          onOpenIndex={() => {
+            setBeat(rig.beat);
+            setIndexOpen(true);
+          }}
+        />
+        <Chapters
+          open={indexOpen}
+          onClose={() => setIndexOpen(false)}
+          onJump={jump}
+          active={beat}
+        />
         <Configurator
           open={buildOpen}
           setOpen={setBuildOpen}

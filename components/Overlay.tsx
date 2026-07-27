@@ -80,6 +80,46 @@ function DetailPanel({ shot }: { shot: Shot }) {
   );
 }
 
+const TICKER = [
+  "3.6 litre flat six",
+  "twin KKK K04",
+  "420 hp",
+  "560 Nm",
+  "all-wheel drive",
+  "6-speed manual",
+  "305 km/h",
+  "1540 kg",
+  "Rubystone Red",
+  "1997 — 2005",
+];
+
+/** the strip that runs forever along the bottom of the landing screen */
+function Ticker() {
+  const row = (
+    <div className="flex shrink-0 items-center">
+      {TICKER.map((t) => (
+        <span
+          key={t}
+          className="flex items-center whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.3em] text-white/30"
+        >
+          {t}
+          <span className="mx-6 inline-block h-1 w-1 rounded-full bg-ruby/70" />
+        </span>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden border-t border-white/10 py-3">
+      {/* duplicated so the loop has something to scroll into */}
+      <div className="marquee">
+        {row}
+        {row}
+      </div>
+    </div>
+  );
+}
+
 /** headline numbers under the hero */
 const HERO_META: [string, string][] = [
   ["420", "hp"],
@@ -110,6 +150,7 @@ function HeroBlock({
       ref={ref}
       className="relative flex h-screen w-full flex-col justify-end px-5 pb-36 md:justify-center md:px-16 md:pb-0"
     >
+      <Ticker />
       <div
         className={`max-w-2xl transition-all duration-700 ease-out ${shown(on)}`}
       >
