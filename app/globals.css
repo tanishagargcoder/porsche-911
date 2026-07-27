@@ -128,26 +128,28 @@ html.lenis body {
   animation: intro-word 3600ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+/* the wordmark sits over the crest, then clears the frame before the car
+   arrives — timings track the crest phase in Scene (0 → 20% of the intro) */
 @keyframes intro-word {
   0% {
     opacity: 0;
     letter-spacing: 1.1em;
     filter: blur(12px);
   }
-  14% {
+  10% {
     opacity: 1;
     filter: blur(0);
   }
-  22% {
+  18% {
     letter-spacing: 0.22em;
   }
-  62% {
+  26% {
     opacity: 1;
     letter-spacing: 0.22em;
   }
-  80% {
+  40% {
     opacity: 0;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.18em;
   }
   100% {
     opacity: 0;

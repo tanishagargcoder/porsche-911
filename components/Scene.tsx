@@ -36,6 +36,18 @@ const offset = new THREE.Vector3();
 const right = new THREE.Vector3();
 const up = new THREE.Vector3(0, 1, 0);
 
+/**
+ * The intro opens on the crest on the bonnet — the real one on the model, sat
+ * at roughly x 1.75, y 0.63 once the car is normalised — and pushes in while
+ * the engine turns over. Then it cuts wide for the fly-past.
+ */
+const CREST_CAM: [number, number, number] = [2.62, 0.68, 0.06];
+const CREST_CAM_END: [number, number, number] = [2.12, 0.655, 0.02];
+const CREST_TARGET: [number, number, number] = [1.75, 0.63, -0.04];
+const CREST_FOV = 15;
+/** how much of the intro the crest holds for */
+const CREST_UNTIL = 0.2;
+
 /** side-on and tight, so the car fills the frame as it tears past */
 const INTRO_CAM: [number, number, number] = [0, 1.15, 9];
 const INTRO_TARGET: [number, number, number] = [0, 0.8, 0];
@@ -108,7 +120,8 @@ function Rig({
         : launch;
       // nose-first down the straight during the pass, timeline yaw after it
       car.current.rotation.y = passing ? 0 : from.yaw + (to.yaw - from.yaw) * t;
-      car.current.visible = !running || intro.t > 0.2;
+      // parked and lit for the crest, then off down the straight — never hidden
+      car.current.visible = true;
     }
 
     // ---- camera ---------------------------------------------------------
@@ -131,13 +144,25 @@ function Rig({
       fov = Math.min(fov + 6, 60);
     }
 
-    // hold the side-on framing through the pass, then swing into the hero shot
+    // the intro overrides the shot list: crest macro, then the side-on pass,
+    // then a swing into the hero framing
     const handover = running ? 1 - range(intro.t, 0.72, 1) : 0;
     if (handover > 0) {
       const h = easeInOut(handover);
       camPos.lerp(a.fromArray(INTRO_CAM), h);
       camTarget.lerp(b.fromArray(INTRO_TARGET), h);
       fov += (INTRO_FOV - fov) * h;
+    }
+
+    if (running && intro.t < CREST_UNTIL) {
+      // slow push towards the badge while the engine catches
+      const push = easeInOut(range(intro.t, 0, CREST_UNTIL));
+      a.fromArray(CREST_CAM);
+      b.fromArray(CREST_CAM_END);
+      camPos.lerpVectors(a, b, push);
+      camTarget.fromArray(CREST_TARGET);
+      // portrait crops the sides, so open up or the badge overfills the frame
+      fov = aspect < 1.35 ? CREST_FOV + 7 : CREST_FOV;
     }
 
     // ---- pointer parallax ------------------------------------------------
