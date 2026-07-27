@@ -6,6 +6,7 @@ import Lenis from "lenis";
 import { useProgress } from "@react-three/drei";
 import { Overlay } from "@/components/Overlay";
 import { Configurator } from "@/components/Configurator";
+import { TopBar } from "@/components/TopBar";
 import { Loader } from "@/components/Loader";
 import { Intro } from "@/components/Intro";
 import { Gate } from "@/components/Gate";
@@ -39,6 +40,7 @@ export default function Home() {
   const [sound, setSound] = useState(false);
   const [night, setNight] = useState(false);
   const [film, setFilm] = useState(false);
+  const [buildOpen, setBuildOpen] = useState(false);
   const [wheelSlug, setWheelSlug] = useState(WHEELS[0].slug);
   const [caliperSlug, setCaliperSlug] = useState(CALIPERS[0].slug);
   const lenis = useRef<Lenis | null>(null);
@@ -291,9 +293,17 @@ export default function Home() {
             photo ? "pointer-events-none opacity-0" : "opacity-100"
           }`}
         >
-          <Overlay paint={swatch} />
+          <Overlay
+            paint={swatch}
+            onBuild={() => setBuildOpen(true)}
+            onPlayFilm={toggleFilm}
+            film={film}
+          />
         </div>
+        <TopBar paint={swatch} onJump={jump} />
         <Configurator
+          open={buildOpen}
+          setOpen={setBuildOpen}
           paint={swatch}
           setPaint={setPaint}
           wheel={wheel}

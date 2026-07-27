@@ -134,27 +134,10 @@ export function Hud({
         {swatch.name}, paint code {swatch.code}
       </p>
 
-      {/* top left — who and what */}
-      <div className="pointer-events-none fixed left-5 top-6 z-20 font-mono text-[10px] uppercase leading-relaxed tracking-[0.25em] text-white/45 md:left-8 md:top-7">
-        <div className="text-white/80">PORSCHE</div>
-        <div>996.1 Turbo // 2000</div>
-      </div>
-
-      {/* top right — live paint readout, scrambles in on every change */}
-      <div className="pointer-events-none fixed right-5 top-6 z-20 text-right font-mono text-[10px] uppercase leading-relaxed tracking-[0.25em] text-white/45 md:right-8 md:top-7">
-        <div className="flex items-center justify-end gap-2">
-          <span
-            className="h-2 w-2 rounded-full transition-colors duration-500"
-            style={{ background: swatch.hex }}
-          />
-          <Scramble text={swatch.name} className="text-white/80" />
-        </div>
-        <div>
-          Paint code {swatch.code} · {swatch.hex.toUpperCase()}
-        </div>
-        <div className="text-ruby/70">
-          <Scramble text={swatch.mood} />
-        </div>
+      {/* the masthead carries the wordmark and paint readout; down here we only
+          keep the mood word, which belongs with the rest of the console */}
+      <div className="pointer-events-none fixed left-5 top-20 z-20 font-mono text-[10px] uppercase tracking-[0.3em] text-ruby/70 md:left-8">
+        <Scramble text={swatch.mood} />
       </div>
 
       {/* right edge — one tick per beat, click to jump */}

@@ -65,6 +65,8 @@ export function Configurator({
   setCaliper,
   night,
   setNight,
+  open,
+  setOpen,
 }: {
   paint: Paint;
   setPaint: (hex: string) => void;
@@ -74,8 +76,10 @@ export function Configurator({
   setCaliper: (slug: string) => void;
   night: boolean;
   setNight: (on: boolean) => void;
+  /** controlled, so the hero's "Build yours" can open it too */
+  open: boolean;
+  setOpen: (on: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const copyLink = async () => {

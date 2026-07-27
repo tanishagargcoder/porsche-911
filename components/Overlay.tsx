@@ -80,6 +80,108 @@ function DetailPanel({ shot }: { shot: Shot }) {
   );
 }
 
+/** headline numbers under the hero */
+const HERO_META: [string, string][] = [
+  ["420", "hp"],
+  ["4.2", "s to 100"],
+  ["305", "km/h"],
+  ["AWD", "drive"],
+];
+
+/**
+ * The landing screen. Everything above the fold lives here: masthead sits
+ * separately, this is the statement — model, colour, numbers, two ways in.
+ */
+function HeroBlock({
+  paint,
+  onBuild,
+  onPlayFilm,
+  film,
+}: {
+  paint: Paint;
+  onBuild: () => void;
+  onPlayFilm: () => void;
+  film: boolean;
+}) {
+  const [ref, on] = useOnScreen(true);
+
+  return (
+    <section
+      ref={ref}
+      className="relative flex h-screen w-full flex-col justify-end px-5 pb-36 md:justify-center md:px-16 md:pb-0"
+    >
+      <div
+        className={`max-w-2xl transition-all duration-700 ease-out ${shown(on)}`}
+      >
+        <div className="mb-6 flex items-center gap-4">
+          <span className="h-px w-10 bg-ruby" />
+          <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-ruby">
+            <Scramble text="Fan build · 996 Turbo" run={on} />
+          </span>
+        </div>
+
+        <h1 className="font-display uppercase leading-[0.86] tracking-[-0.02em] text-white">
+          <span className="block text-[19vw] md:text-[9.5rem]">911</span>
+          <span className="block text-[19vw] md:text-[9.5rem]">Turbo</span>
+          <span
+            key={paint.name}
+            className="mt-3 block text-[7vw] text-ruby md:text-[2.6rem]"
+          >
+            {paint.name}
+          </span>
+        </h1>
+
+        <p className="mt-6 max-w-sm text-sm leading-relaxed text-white/50 md:text-base">
+          {paint.tagline}. Scroll and the camera walks around it.
+        </p>
+
+        {/* the numbers, hairline-separated the way a spec strip reads */}
+        <dl className="mt-8 flex flex-wrap items-end gap-x-6 gap-y-3 border-y border-white/10 py-4">
+          {HERO_META.map(([value, label], i) => (
+            <div
+              key={label}
+              className={`flex items-baseline gap-2 ${
+                i > 0 ? "border-l border-white/10 pl-6" : ""
+              }`}
+            >
+              <dd className="font-display text-2xl tabular-nums text-white md:text-3xl">
+                {value}
+              </dd>
+              <dt className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/35">
+                {label}
+              </dt>
+            </div>
+          ))}
+        </dl>
+
+        <div className="mt-8 flex flex-wrap items-center gap-3">
+          <button
+            onClick={onBuild}
+            className="group flex items-center gap-3 bg-white px-6 py-3.5 font-mono text-[10px] uppercase tracking-[0.3em] text-black transition-colors hover:bg-ruby hover:text-white"
+          >
+            Build yours
+            <span className="transition-transform duration-300 group-hover:translate-x-1">
+              →
+            </span>
+          </button>
+
+          <button
+            onClick={onPlayFilm}
+            className="flex items-center gap-3 border border-white/20 px-6 py-3.5 font-mono text-[10px] uppercase tracking-[0.3em] text-white/70 transition-colors hover:border-white hover:text-white"
+          >
+            <span
+              className={`h-1.5 w-1.5 ${
+                film ? "animate-pulse bg-ruby" : "rounded-full bg-white/40"
+              }`}
+            />
+            {film ? "Stop film" : "Play film"}
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /** the wide copy beats */
 function CopyBlock({
   shot,
@@ -288,11 +390,29 @@ function TurnBlock({ shot, index }: { shot: Shot; index: number }) {
   );
 }
 
-export function Overlay({ paint }: { paint: Paint }) {
+export function Overlay({
+  paint,
+  onBuild,
+  onPlayFilm,
+  film,
+}: {
+  paint: Paint;
+  onBuild: () => void;
+  onPlayFilm: () => void;
+  film: boolean;
+}) {
   return (
     <div className="relative z-10">
       {SHOTS.map((shot, i) =>
-        shot.kind === "detail" ? (
+        shot.kind === "title" ? (
+          <HeroBlock
+            key={shot.id}
+            paint={paint}
+            onBuild={onBuild}
+            onPlayFilm={onPlayFilm}
+            film={film}
+          />
+        ) : shot.kind === "detail" ? (
           <DetailPanel key={shot.id} shot={shot} />
         ) : shot.kind === "turn" ? (
           <TurnBlock key={shot.id} shot={shot} index={i} />
