@@ -99,6 +99,9 @@ function Rig() {
   const settled = useRef(false);
   const drift = useRef(new THREE.Vector2());
   const configure = useRef(0);
+  const previewMix = useRef(0);
+  /** the last hovered beat, kept so the camera can ease back out of it */
+  const previewBeat = useRef(0);
 
   useFrame((_, delta) => {
     if (rig.photo) return; // OrbitControls owns the camera in photo mode
@@ -114,9 +117,24 @@ function Rig() {
 
     const { from, to, t, p } = poseFromScroll();
 
+    // hovering a card in the index flies the real camera to that beat
+    if (rig.preview !== null) previewBeat.current = rig.preview;
+    previewMix.current +=
+      ((rig.preview !== null ? 1 : 0) - previewMix.current) *
+      Math.min(1, delta * 3.2);
+    const peek = easeInOut(previewMix.current);
+    const peeked = SHOTS[previewBeat.current] ?? SHOTS[0];
+
     rig.beat = Math.round(p);
     rig.detail = from.kind === "detail" || to.kind === "detail" ? 1 : 0;
-    rig.lights = running ? 0 : clamp(p - IGNITE_AT);
+    // The car wakes up as it settles: one blink of the headlamps right at the
+    // handover, before the scroll timeline takes over the lighting.
+    const blink =
+      intro.startedAt > 0 && intro.t > 0.78 && intro.t < 0.97
+        ? Math.sin((intro.t - 0.78) * (Math.PI / 0.19))
+        : 0;
+
+    rig.lights = running ? blink : clamp(p - IGNITE_AT);
 
     // the closing run: the car straightens up and drives out of frame, which is
     // the intro fly-past played once more on the way out
@@ -132,7 +150,10 @@ function Rig() {
         ? RUN_FROM + (RUN_TO - RUN_FROM) * pass
         : launch;
       // nose-first down the straight during the pass, timeline yaw after it
-      car.current.rotation.y = passing ? 0 : from.yaw + (to.yaw - from.yaw) * t;
+      const yaw = from.yaw + (to.yaw - from.yaw) * t;
+      car.current.rotation.y = passing
+        ? 0
+        : yaw + (peeked.yaw - yaw) * peek;
       // parked and lit for the crest, then off down the straight — never hidden
       car.current.visible = true;
     }
@@ -178,6 +199,12 @@ function Rig() {
       fov = aspect < 1.35 ? CREST_FOV + 7 : CREST_FOV;
     }
 
+    if (peek > 0.001) {
+      camPos.lerp(a.fromArray(peeked.cam), peek);
+      camTarget.lerp(b.fromArray(peeked.target), peek);
+      fov += (peeked.fov - fov) * peek;
+    }
+
     // while the build panel is open the shot list hands over: the camera holds
     // a pose where every configurable part is on screen at once
     configure.current +=
@@ -188,6 +215,14 @@ function Rig() {
       camPos.lerp(a.fromArray(CONFIG_CAM), c);
       camTarget.lerp(b.fromArray(CONFIG_TARGET), c);
       fov += (CONFIG_FOV - fov) * c;
+
+      // On a phone the panel owns the bottom half of the screen. Aiming below
+      // the car lifts it into the top half, so the paint, rims and calipers are
+      // all above the panel while you're changing them.
+      if (aspect < 1) {
+        camTarget.y -= 0.62 * c;
+        camPos.y += 0.12 * c;
+      }
     }
 
     // ---- pointer parallax ------------------------------------------------

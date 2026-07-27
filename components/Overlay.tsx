@@ -44,7 +44,7 @@ function DetailPanel({ shot }: { shot: Shot }) {
         }`}
       >
         <div
-          className={`relative border-y border-white/15 bg-black/30 px-5 py-4 backdrop-blur-sm ${
+          className={`glass relative rounded-card px-5 py-4 ${
             right ? "text-right" : ""
           }`}
         >
@@ -120,6 +120,23 @@ function Ticker() {
   );
 }
 
+/** one hero line, each letter arriving on its own beat */
+function Kinetic({ text, delay }: { text: string; delay: number }) {
+  return (
+    <span className="block text-[19vw] md:text-[9.5rem]">
+      {text.split("").map((ch, i) => (
+        <span
+          key={`${ch}-${i}`}
+          className="gate-in inline-block"
+          style={{ animationDelay: `${delay + i * 55}ms` }}
+        >
+          {ch}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 /** headline numbers under the hero */
 const HERO_META: [string, string][] = [
   ["420", "hp"],
@@ -161,20 +178,10 @@ function HeroBlock({
           </span>
         </div>
 
-        {/* the headline lands a line at a time rather than fading in as a block */}
+        {/* the headline lands character by character, not as a block */}
         <h1 className="font-display uppercase leading-[0.86] tracking-[-0.02em] text-white">
-          <span
-            className="gate-in block text-[19vw] md:text-[9.5rem]"
-            style={{ animationDelay: "60ms" }}
-          >
-            911
-          </span>
-          <span
-            className="gate-in block text-[19vw] md:text-[9.5rem]"
-            style={{ animationDelay: "150ms" }}
-          >
-            Turbo
-          </span>
+          <Kinetic text="911" delay={60} />
+          <Kinetic text="Turbo" delay={200} />
           <span
             key={paint.name}
             className="gate-in mt-3 block text-[7vw] text-ruby md:text-[2.6rem]"

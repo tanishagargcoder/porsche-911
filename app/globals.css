@@ -2,7 +2,9 @@
 
 @theme {
   --color-ruby: #d1155a;
-  --color-ink: #05060a;
+  /* near-black with a touch of warmth, so the ruby doesn't read as cold */
+  --color-ink: #06050a;
+  --radius-card: 0.875rem;
   --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
@@ -77,6 +79,14 @@ html.lenis body {
   top: 1rem;
 }
 
+/* one panel treatment shared by the configurator, the spec cards and the
+   detail readouts, so they read as one system rather than three widgets */
+.glass {
+  background: rgba(10, 9, 15, 0.68);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
 /* vignette over the canvas so the copy always has something to sit on */
 .vignette {
   background: radial-gradient(
@@ -119,6 +129,41 @@ html.lenis body {
   50% {
     opacity: 1;
     transform: translateY(2px);
+  }
+}
+
+/* the HUD boots in once, as the intro hands over to the page */
+.boot {
+  opacity: 0;
+  animation: boot 800ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes boot {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+
+/* corner brackets draw themselves rather than appearing */
+.boot-corner {
+  animation: boot-corner 900ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes boot-corner {
+  from {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 

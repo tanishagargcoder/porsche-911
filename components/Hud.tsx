@@ -10,13 +10,22 @@ import { Scramble } from "./Scramble";
 /** thin ruby corner brackets, the frame the whole page sits inside */
 function Corners() {
   const base =
-    "pointer-events-none fixed h-8 w-8 border-ruby/50 mix-blend-screen z-20";
+    "boot-corner pointer-events-none fixed h-8 w-8 border-ruby/50 mix-blend-screen z-20 opacity-0";
   return (
     <>
       <span className={`${base} left-4 top-4 border-l border-t`} />
-      <span className={`${base} right-4 top-4 border-r border-t`} />
-      <span className={`${base} bottom-4 left-4 border-b border-l`} />
-      <span className={`${base} bottom-4 right-4 border-b border-r`} />
+      <span
+        className={`${base} right-4 top-4 border-r border-t`}
+        style={{ animationDelay: "90ms" }}
+      />
+      <span
+        className={`${base} bottom-4 left-4 border-b border-l`}
+        style={{ animationDelay: "180ms" }}
+      />
+      <span
+        className={`${base} bottom-4 right-4 border-b border-r`}
+        style={{ animationDelay: "270ms" }}
+      />
     </>
   );
 }
@@ -174,9 +183,11 @@ export function Hud({
           <button
             key={s.id}
             onClick={() => onJump(i)}
+            // the ticks arrive one after another as the HUD comes up
+            style={{ animationDelay: `${350 + i * 30}ms` }}
             aria-label={s.hud?.label ?? s.title ?? s.kind}
             aria-current={i === active}
-            className="group flex items-center gap-2 py-1 pl-6"
+            className="boot group flex items-center gap-2 py-1 pl-6"
           >
             <span className="whitespace-nowrap font-mono text-[9px] uppercase tracking-[0.25em] text-white/0 transition-colors duration-200 group-hover:text-white/60">
               {s.hud?.label ?? s.title ?? "Rotation"}
@@ -193,7 +204,8 @@ export function Hud({
       {/* bottom left — progress and the chevrons that keep pointing down.
           Sits above the configurator on phones so the two never collide. */}
       <div
-        className={`pointer-events-none fixed bottom-32 left-5 z-20 flex items-end gap-4 font-mono text-[10px] uppercase tracking-[0.25em] text-white/45 transition-opacity duration-300 md:bottom-8 md:left-8 ${
+        style={{ animationDelay: "420ms" }}
+        className={`boot pointer-events-none fixed bottom-32 left-5 z-20 flex items-end gap-4 font-mono text-[10px] uppercase tracking-[0.25em] text-white/45 transition-opacity duration-300 md:bottom-8 md:left-8 ${
           buildOpen ? "opacity-0 md:opacity-100" : "opacity-100"
         }`}
       >

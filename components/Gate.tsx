@@ -96,10 +96,11 @@ export function Gate({
           <span className="absolute inset-3 rounded-full border border-white/15 bg-black/50 backdrop-blur-sm transition-colors duration-300 group-hover:border-ruby group-hover:bg-ruby/15" />
           <span className="relative flex flex-col items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-ruby transition-transform duration-300 group-hover:scale-150" />
-            <span className="font-mono text-[9px] uppercase leading-tight tracking-[0.25em] text-white">
-              Fire
-              <br />
-              it up
+            <span className="font-display text-[11px] uppercase tracking-[0.22em] text-white">
+              Porsche
+            </span>
+            <span className="font-mono text-[8px] uppercase tracking-[0.25em] text-white/45">
+              press to start
             </span>
           </span>
         </button>

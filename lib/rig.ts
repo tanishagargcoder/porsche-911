@@ -14,6 +14,11 @@ export const rig = {
   photo: false,
   /** true while the build panel is open — the camera holds a showcase pose */
   configuring: false,
+  /**
+   * Beat being hovered in the chapter index. The camera flies to it live rather
+   * than the card showing a recorded preview — we have the real thing running.
+   */
+  preview: null as number | null,
   /** km/h during the closing run — 0 whenever the car is parked */
   speed: 0,
   /**

@@ -13,7 +13,7 @@ function Row({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-6 py-3">
+    <div className="flex items-center justify-between gap-6 py-1.5 md:py-3">
       <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/35">
         {label}
       </span>
@@ -122,13 +122,13 @@ export function Configurator({
           maxHeight: open ? "30rem" : 0,
           opacity: open ? 1 : 0,
         }}
-        className={`mb-3 origin-bottom overflow-hidden rounded-2xl border bg-black/70 backdrop-blur-md transition-all duration-300 ${
-          open
-            ? "border-white/10"
-            : "pointer-events-none border-transparent"
+        className={`glass mb-3 origin-bottom overflow-hidden rounded-card transition-all duration-300 ${
+          open ? "" : "pointer-events-none"
         }`}
       >
-        <div className="divide-y divide-white/10 px-5 py-2">
+        {/* tighter on phones: every row of padding here is a row of car you
+            can't see while you're changing it */}
+        <div className="divide-y divide-white/10 px-4 py-0 md:px-5 md:py-2">
           <Row label="Wheels">
             {WHEELS.map((w) => (
               <Dot
@@ -167,11 +167,11 @@ export function Configurator({
           </Row>
 
           {/* your build */}
-          <div className="py-4">
-            <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.3em] text-ruby">
+          <div className="py-3 md:py-4">
+            <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.3em] text-ruby md:mb-3">
               Your build
             </div>
-            <dl className="space-y-1.5 font-mono text-[10px] uppercase tracking-[0.15em]">
+            <dl className="space-y-1 font-mono text-[10px] uppercase tracking-[0.15em] md:space-y-1.5">
               {[
                 ["Model", "911 Turbo · 996"],
                 ["Paint", `${paint.name} · ${paint.code}`],
@@ -187,7 +187,7 @@ export function Configurator({
 
             <button
               onClick={copyLink}
-              className="mt-4 w-full border border-white/20 py-2.5 font-mono text-[10px] uppercase tracking-[0.3em] text-white/60 transition-colors hover:border-ruby hover:text-white"
+              className="mt-3 w-full border border-white/20 py-2.5 font-mono text-[10px] uppercase tracking-[0.3em] text-white/60 transition-colors hover:border-ruby hover:text-white md:mt-4"
             >
               {copied ? "Link copied" : "Copy build link"}
             </button>
@@ -196,7 +196,7 @@ export function Configurator({
       </div>
 
       {/* the bar */}
-      <div className="flex items-center justify-between gap-2 rounded-full border border-white/10 bg-black/60 px-2 py-1 backdrop-blur-md md:px-3">
+      <div className="glass flex items-center justify-between gap-2 rounded-full px-2 py-1 md:px-3">
         <div className="flex items-center">
           {PAINTS.map((p) => (
             <Dot
